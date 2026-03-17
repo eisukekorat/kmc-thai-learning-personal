@@ -3,127 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KMC タイ語学習アプリ</title>
+<title>タイ語学習アプリ</title>
 <meta name="theme-color" content="#0a0e14">
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif;
-  background: linear-gradient(135deg, #0a0e14 0%, #1a1d27 100%);
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  color: #e8e4dc;
-}
-.container {
-  max-width: 500px;
-  width: 100%;
-}
-.header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-.title {
-  font-size: 2rem;
-  color: #e8c87a;
-  margin-bottom: 10px;
-  letter-spacing: 0.05em;
-}
-.subtitle {
-  color: #7a7a8a;
-  font-size: 0.9rem;
-}
-.cards {
-  display: grid;
-  gap: 20px;
-}
-.card {
-  background: #1a1d27;
-  border: 1px solid #2e3248;
-  border-radius: 16px;
-  padding: 30px;
-  text-align: center;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  text-decoration: none;
-  display: block;
-}
-.card:hover {
-  transform: translateY(-4px);
-  border-color: #b8956e;
-  box-shadow: 0 8px 24px rgba(184, 149, 110, 0.15);
-}
-.card-icon {
-  font-size: 3rem;
-  margin-bottom: 15px;
-}
-.card-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #e8e4dc;
-  margin-bottom: 8px;
-}
-.card-desc {
-  color: #7a7a8a;
-  font-size: 0.85rem;
-  line-height: 1.5;
-}
-.badge {
-  display: inline-block;
-  background: rgba(184, 149, 110, 0.15);
-  color: #b8956e;
-  padding: 4px 12px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  margin-top: 10px;
-  font-weight: 600;
-}
-.footer {
-  text-align: center;
-  margin-top: 40px;
-  color: #7a7a8a;
-  font-size: 0.8rem;
-}
-@media (max-width: 480px) {
-  .title { font-size: 1.5rem; }
-}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0e14;
+    color: #e4e2da;
+    font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+  }
+  .logo { font-size: 3.5rem; }
+  .message {
+    font-size: 1.15rem;
+    color: #d4b87a;
+    letter-spacing: 0.06em;
+    text-align: center;
+  }
+  .spinner {
+    width: 34px;
+    height: 34px;
+    border: 3px solid #262c38;
+    border-top-color: #b8956e;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .sub {
+    font-size: 0.8rem;
+    color: #6e6e7e;
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <div class="title">🇹🇭 KMC タイ語学習</div>
-    <div class="subtitle">製造業特化・実践的フレーズ集</div>
-  </div>
-  
-  <div class="cards">
-    <a href="basic.html" class="card">
-      <div class="card-icon">📚</div>
-      <div class="card-title">基礎版</div>
-      <div class="card-desc">
-        単語40個・フレーズ40個<br>
-        まずはこちらから始めるのがおすすめ
-      </div>
-      <div class="badge">初心者向け</div>
-    </a>
-    
-    <a href="advanced.html" class="card">
-      <div class="card-icon">🚀</div>
-      <div class="card-title">完全版</div>
-      <div class="card-desc">
-        単語200個・フレーズ200個・文法20項目<br>
-        学習/復習モード・進捗管理機能付き
-      </div>
-      <div class="badge">本格学習</div>
-    </a>
-  </div>
-  
-  <div class="footer">
-    <p>KMC 製造業務特化版</p>
-    <p style="margin-top: 5px;">職場・品質管理・会議で使える実践的内容</p>
-  </div>
-</div>
+<div class="logo">🇹🇭</div>
+<div class="message">タイ語学習アプリを起動中...</div>
+<div class="spinner"></div>
+<div class="sub">少々お待ちください</div>
+<script>
+  setTimeout(function() {
+    window.location.href = 'advanced.html';
+  }, 2000);
+</script>
 </body>
 </html>
