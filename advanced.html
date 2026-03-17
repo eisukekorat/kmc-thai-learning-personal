@@ -970,6 +970,8 @@
     </div>
   </div>
 
+  <div id="motivationMsg" style="text-align:center; font-size:0.82rem; color:#d4b87a; margin:8px 0; min-height:1.2em;"></div>
+
   <div class="srs-review-box">
     <div class="srs-title">🔥 今日の復習</div>
     <div id="srsReviewList" class="srs-list">
@@ -2123,6 +2125,23 @@ function getTodayReviewWords() {
   return words;
 }
 
+function getMotivationMessage() {
+  const todayTotal = Object.keys(progress.vocabLearned).filter(k => progress.vocabLearned[k]).length
+                    + Object.keys(progress.phrasesLearned).filter(k => progress.phrasesLearned[k]).length
+                    + Object.keys(progress.grammarLearned).filter(k => progress.grammarLearned[k]).length;
+
+  const streak = parseInt(localStorage.getItem('streakCount') || '1');
+
+  if (todayTotal === 0) return '今日もタイ語を学習しましょう！ 💪';
+  if (streak >= 7) return `🔥 ${streak}日連続！すごい継続力です！`;
+  if (streak >= 3) return `✨ ${streak}日連続中！いい調子です！`;
+
+  const weakCount = Object.keys(JSON.parse(localStorage.getItem('weakWords') || '{}')).length;
+  if (weakCount > 0) return `⚠️ 苦手単語が${weakCount}個あります。復習してみましょう`;
+
+  return `今日も学習しています！ 継続は力なり 🌟`;
+}
+
 function renderHomeScreen() {
   // 進捗
   const vocabCount = Object.keys(progress.vocabLearned).filter(k => progress.vocabLearned[k]).length;
@@ -2153,6 +2172,10 @@ function renderHomeScreen() {
     }).join('');
     startBtn.style.display = 'block';
   }
+
+  // モチベーションメッセージ
+  const msgEl = document.getElementById('motivationMsg');
+  if (msgEl) msgEl.textContent = getMotivationMessage();
 }
 
 let srsReviewQueue = [];
