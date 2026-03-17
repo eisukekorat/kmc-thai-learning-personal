@@ -674,6 +674,42 @@
 
   /* Loading state removed for smoother experience */
 
+  /* ---- Vocab Filter ---- */
+  .filter-section {
+    margin: 10px 0 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .filter-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .filter-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    white-space: nowrap;
+    min-width: 56px;
+  }
+
+  .filter-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 0.73rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filter-btn:hover:not(.active) { border-color: var(--accent2); color: var(--accent2); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; }
+
   /* ---- Practice Quiz ---- */
   .practice-btn {
     margin-top: 14px;
@@ -1072,6 +1108,26 @@
       <button class="cat-btn" onclick="setCategory('polite', this)">🙏 敬語</button>
     </div>
 
+    <!-- FILTER ROW -->
+    <div class="filter-section">
+      <div class="filter-row">
+        <span class="filter-label">⭐ 頻度：</span>
+        <button class="filter-btn freq-btn active" onclick="setFreqFilter('all', this)">全て</button>
+        <button class="filter-btn freq-btn" onclick="setFreqFilter('high', this)">🔥 超頻出</button>
+        <button class="filter-btn freq-btn" onclick="setFreqFilter('medium', this)">📗 頻出</button>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">🏷 シーン：</span>
+        <button class="filter-btn scene-btn active" onclick="setSceneFilter('all', this)">全て</button>
+        <button class="filter-btn scene-btn" onclick="setSceneFilter('朝礼', this)">☀️ 朝礼</button>
+        <button class="filter-btn scene-btn" onclick="setSceneFilter('QC', this)">🔍 QC</button>
+        <button class="filter-btn scene-btn" onclick="setSceneFilter('不良対応', this)">⚠️ 不良</button>
+        <button class="filter-btn scene-btn" onclick="setSceneFilter('指示', this)">📢 指示</button>
+        <button class="filter-btn scene-btn" onclick="setSceneFilter('会議', this)">🤝 会議</button>
+        <button class="filter-btn scene-btn" onclick="setSceneFilter('日常', this)">💬 日常</button>
+      </div>
+    </div>
+
     <div class="flashcard" id="flashcard" onclick="showMeaning()">
       <button class="speaker-btn" onclick="event.stopPropagation(); playAudio('vocab')">🔊</button>
       <div class="thai-word" id="fcThai">–</div>
@@ -1176,6 +1232,15 @@ document.addEventListener('DOMContentLoaded', function() {
   btns.forEach(b => b.classList.remove('active'));
   const idx = rateMap[speechRate] ?? 1;
   if (btns[idx]) btns[idx].classList.add('active');
+  // Init filter buttons
+  document.querySelectorAll('.freq-btn').forEach(b => {
+    b.classList.remove('active');
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + freqFilter + "'")) b.classList.add('active');
+  });
+  document.querySelectorAll('.scene-btn').forEach(b => {
+    b.classList.remove('active');
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + sceneFilter + "'")) b.classList.add('active');
+  });
 });
 
 // ================================
@@ -1779,6 +1844,8 @@ let currentCards = [];
 let cardIndex = 0;
 let revealed = false;
 let vocabMode = 'learn';
+let freqFilter = localStorage.getItem('vocabFreqFilter') || 'all';
+let sceneFilter = localStorage.getItem('vocabSceneFilter') || 'all';
 
 function setVocabMode(mode) {
   vocabMode = mode;
@@ -1802,11 +1869,38 @@ function setCategory(cat, btn) {
 }
 
 function getVocabList() {
-  const allVocab = vocabData[currentCategory].slice(0, 50); // 最初の50個のみ
+  let allVocab = vocabData[currentCategory].slice(0, 50);
+  // 頻度フィルター
+  if (freqFilter !== 'all') {
+    allVocab = allVocab.filter(v => v.frequency === freqFilter);
+  }
+  // シーンフィルター
+  if (sceneFilter !== 'all') {
+    allVocab = allVocab.filter(v => v.scenes && v.scenes.includes(sceneFilter));
+  }
   if (vocabMode === 'learn') {
-    return allVocab.filter((v, i) => !progress.vocabLearned[currentCategory + '_' + i]);
+    return allVocab.filter((v) => {
+      const origIdx = vocabData[currentCategory].slice(0, 50).indexOf(v);
+      return !progress.vocabLearned[currentCategory + '_' + origIdx];
+    });
   }
   return allVocab;
+}
+
+function setFreqFilter(val, btn) {
+  freqFilter = val;
+  localStorage.setItem('vocabFreqFilter', val);
+  document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  startCards();
+}
+
+function setSceneFilter(val, btn) {
+  sceneFilter = val;
+  localStorage.setItem('vocabSceneFilter', val);
+  document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  startCards();
 }
 
 function shuffle(arr) {
