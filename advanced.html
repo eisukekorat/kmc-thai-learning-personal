@@ -1205,6 +1205,10 @@ let progress = loadProgress();
 let weakWords = JSON.parse(localStorage.getItem('weakWords') || '{}');
 function saveWeakWords() { localStorage.setItem('weakWords', JSON.stringify(weakWords)); }
 
+// 文法クイズスコア
+let grammarQuizScores = JSON.parse(localStorage.getItem('grammarQuizScores') || '{}');
+function saveGrammarQuizScores() { localStorage.setItem('grammarQuizScores', JSON.stringify(grammarQuizScores)); }
+
 function updateProgressDisplay() {
   const vocabCount = Object.keys(progress.vocabLearned).filter(k => progress.vocabLearned[k]).length;
   const phraseCount = Object.keys(progress.phrasesLearned).filter(k => progress.phrasesLearned[k]).length;
@@ -2509,6 +2513,22 @@ function answerPractice(gidx, qi, chosen) {
   // スコア管理
   if (!practiceScore[gidx]) practiceScore[gidx] = {};
   practiceScore[gidx][qi] = (chosen === q.correct);
+
+  // 永続スコア記録
+  const isCorrect = (chosen === q.correct);
+  if (isCorrect) {
+    grammarQuizScores[gidx + '_' + qi] = true;
+    saveGrammarQuizScores();
+    // 全問正解なら grammarLearned に反映
+    const item = grammarData[gidx];
+    if (item.practice) {
+      const allCorrect = item.practice.every((_, qi2) => grammarQuizScores[gidx + '_' + qi2]);
+      if (allCorrect) {
+        progress.grammarLearned['grammar_' + gidx] = true;
+        saveProgress();
+      }
+    }
+  }
 
   // 全問正解チェック
   const total = grammarData[gidx].practice.length;
