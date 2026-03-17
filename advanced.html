@@ -352,6 +352,33 @@
   .fc-btn.again { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
   .fc-btn.skip { background: transparent; color: var(--muted); border: 1px solid var(--border); }
 
+  /* QUIZ MODE */
+  .quiz-choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    max-width: 440px;
+  }
+  .quiz-choice {
+    padding: 12px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.84rem;
+    font-weight: 500;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .quiz-choice:hover:not(:disabled) { border-color: var(--accent2); background: var(--surface2); }
+  .quiz-choice.correct { background: var(--green); color: var(--bg); border-color: var(--green); }
+  .quiz-choice.wrong { background: var(--red); color: #fff; border-color: var(--red); }
+  .quiz-choice:disabled { cursor: default; opacity: 0.8; }
+  .quiz-score { font-size: 1.1rem; color: var(--accent); font-weight: 700; text-align: center; }
+
   /* GRAMMAR */
   .grammar-list {
     display: grid;
@@ -983,6 +1010,7 @@
   <div class="mode-switcher">
     <button class="mode-btn active" onclick="setVocabMode('learn')">📚 学習モード</button>
     <button class="mode-btn" onclick="setVocabMode('review')">🔄 復習モード</button>
+    <button class="mode-btn" onclick="setVocabMode('quiz')">🧠 クイズ</button>
   </div>
 
   <div class="flashcard-area">
@@ -1030,6 +1058,23 @@
     </div>
     <div id="fcNext" style="display:none">
       <button class="fc-btn skip" onclick="startCards()">もう一周する</button>
+    </div>
+
+    <!-- QUIZ MODE AREA -->
+    <div id="quizArea" style="display:none; width:100%; max-width:440px; display:none; flex-direction:column; align-items:center; gap:16px;">
+      <div class="flashcard" style="cursor:default;" id="quizCard">
+        <div class="thai-word" id="quizThai">–</div>
+        <div class="romanji" id="quizRomaji">–</div>
+      </div>
+      <div class="card-counter" id="quizCounter">1 / 10</div>
+      <div class="quiz-choices" id="quizChoices"></div>
+      <div id="quizNextBtn" style="display:none">
+        <button class="fc-btn good" onclick="quizNext()">次へ →</button>
+      </div>
+      <div id="quizScoreArea" style="display:none; text-align:center; gap:12px; flex-direction:column; align-items:center;">
+        <div class="quiz-score" id="quizScoreText"></div>
+        <button class="fc-btn skip" onclick="startCards()">もう一度</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1792,12 +1837,29 @@ function shuffle(arr) {
 
 function startCards() {
   const list = getVocabList();
-  currentCards = vocabMode === 'learn' ? shuffle(list) : list;
+  currentCards = (vocabMode === 'learn' || vocabMode === 'quiz') ? shuffle(list) : list;
   cardIndex = 0;
   revealed = false;
   document.getElementById('fcButtons').style.display = 'none';
   document.getElementById('fcNext').style.display = 'none';
-  showCard();
+
+  // クイズモードの切り替え
+  const flashcard = document.getElementById('flashcard');
+  const quizArea = document.getElementById('quizArea');
+  if (vocabMode === 'quiz') {
+    flashcard.style.display = 'none';
+    document.getElementById('tapHint').style.display = 'none';
+    quizArea.style.display = 'flex';
+    quizCorrect = 0;
+    quizTotal = 0;
+    document.getElementById('quizScoreArea').style.display = 'none';
+    document.getElementById('quizNextBtn').style.display = 'none';
+    showQuizCard();
+  } else {
+    flashcard.style.display = '';
+    quizArea.style.display = 'none';
+    showCard();
+  }
 }
 
 function showCard() {
@@ -1874,6 +1936,73 @@ function nextCard(knew) {
   revealed = false;
   document.getElementById('fcButtons').style.display = 'none';
   showCard();
+}
+
+// ---- Quiz ----
+let quizCorrect = 0;
+let quizTotal = 0;
+
+function showQuizCard() {
+  if (currentCards.length === 0 || cardIndex >= currentCards.length) {
+    // クイズ終了
+    document.getElementById('quizCard').style.display = 'none';
+    document.getElementById('quizChoices').innerHTML = '';
+    document.getElementById('quizCounter').textContent = '完了';
+    document.getElementById('quizNextBtn').style.display = 'none';
+    const scoreArea = document.getElementById('quizScoreArea');
+    scoreArea.style.display = 'flex';
+    document.getElementById('quizScoreText').textContent =
+      '結果：' + quizCorrect + ' / ' + quizTotal + ' 正解';
+    return;
+  }
+  const c = currentCards[cardIndex];
+  document.getElementById('quizThai').textContent = c.thai;
+  document.getElementById('quizRomaji').textContent = c.romaji;
+  document.getElementById('quizCounter').textContent = (cardIndex + 1) + ' / ' + currentCards.length;
+  document.getElementById('quizNextBtn').style.display = 'none';
+  document.getElementById('quizCard').style.display = '';
+
+  // 選択肢を作る（正解1 + ランダム3）
+  const allVocab = vocabData[currentCategory].slice(0, 50);
+  const wrongPool = shuffle(allVocab.filter(v => v !== c));
+  const choices = shuffle([c, ...wrongPool.slice(0, 3)]);
+
+  const container = document.getElementById('quizChoices');
+  container.innerHTML = '';
+  choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-choice';
+    btn.textContent = choice.jp;
+    btn.onclick = function() { selectQuizChoice(this, choice === c); };
+    container.appendChild(btn);
+  });
+}
+
+function selectQuizChoice(btn, isCorrect) {
+  // 全ボタンをdisableにする
+  document.querySelectorAll('.quiz-choice').forEach(b => {
+    b.disabled = true;
+    if (b === btn) {
+      b.classList.add(isCorrect ? 'correct' : 'wrong');
+    } else if (isCorrect === false) {
+      // 正解のボタンをハイライト
+    }
+  });
+  // 正解ボタンを緑にする
+  const allChoices = document.querySelectorAll('.quiz-choice');
+  const correctCard = currentCards[cardIndex];
+  allChoices.forEach(b => {
+    if (b.textContent === correctCard.jp) b.classList.add('correct');
+  });
+
+  quizTotal++;
+  if (isCorrect) quizCorrect++;
+  document.getElementById('quizNextBtn').style.display = 'block';
+}
+
+function quizNext() {
+  cardIndex++;
+  showQuizCard();
 }
 
 // ---- SRS ----
