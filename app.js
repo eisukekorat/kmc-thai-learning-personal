@@ -524,6 +524,9 @@ function nextCard(rating) {
   const tipArea = document.getElementById('claudeTipArea');
   if (tipArea) tipArea.style.display = 'none';
 
+  // 学習ログ記録
+  logLearningEvent({ type: 'vocab', word: c.thai, jp: c.jp, category: currentCategory, rating });
+
   if (vocabMode === 'learn') {
     progress.vocabLearned[currentCategory + '_' + realIndex] = (rating === 'know');
     saveProgress();
@@ -1194,6 +1197,8 @@ async function submitGrammarDrill() {
   } else {
     document.getElementById('grammarDrillFeedback').textContent = '（Claude APIキーを設定すると添削が受けられます）';
   }
+  // 学習ログ記録
+  logLearningEvent({ type: 'grammar', pattern: g.tag || g.title });
 }
 
 function nextGrammarDrill() {
@@ -1453,6 +1458,7 @@ async function getDrillFeedback(userText) {
     });
     const data = await res.json();
     document.getElementById('drillFeedback').textContent = data.content[0].text;
+    logLearningEvent({ type: 'drill', scene: scenario.scene, jp: scenario.jp });
   } catch(e) {
     document.getElementById('drillFeedback').textContent = '⚠️ フィードバック取得エラー';
   }
@@ -1461,6 +1467,133 @@ async function getDrillFeedback(userText) {
 function playDrillModel() {
   const text = document.getElementById('drillModelThai').textContent;
   if (text && text !== '–') playAudioTTS(text);
+}
+
+// ---- Phase 5: 弱点分析 + 集中ドリル ----
+
+function logLearningEvent(event) {
+  const LOG_KEY = 'learningLog_v1';
+  const MAX_DAYS = 14;
+  const log = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+  const now = Date.now();
+  log.push({ ...event, ts: now });
+  // 14日以上古いものを削除
+  const cutoff = now - MAX_DAYS * 24 * 60 * 60 * 1000;
+  const trimmed = log.filter(e => e.ts >= cutoff);
+  localStorage.setItem(LOG_KEY, JSON.stringify(trimmed));
+}
+
+async function analyzeWeakness() {
+  const LOG_KEY = 'learningLog_v1';
+  const key = getClaudeKey();
+  const btn = document.getElementById('analyzeBtn');
+  const statusEl = document.getElementById('weaknessStatus');
+  const resultEl = document.getElementById('weaknessResult');
+  const textEl = document.getElementById('weaknessAnalysisText');
+  const focusBtn = document.getElementById('focusDrillBtn');
+
+  const log = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const recentLog = log.filter(e => e.ts >= cutoff);
+
+  if (recentLog.length < 5) {
+    statusEl.textContent = '学習データが少なすぎます（5件以上必要）。単語カードや文法ドリルを続けてください。';
+    return;
+  }
+
+  if (!key) {
+    statusEl.textContent = '⚠️ Claude APIキーを設定してください（⚙️設定タブ）';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '分析中...';
+  resultEl.style.display = 'none';
+
+  // ログを集計
+  const vocabUnknown = recentLog.filter(e => e.type === 'vocab' && e.rating === 'unknown').map(e => e.word);
+  const vocabFuzzy = recentLog.filter(e => e.type === 'vocab' && e.rating === 'fuzzy').map(e => e.word);
+  const vocabKnow = recentLog.filter(e => e.type === 'vocab' && e.rating === 'know').map(e => e.word);
+  const grammarAll = recentLog.filter(e => e.type === 'grammar').map(e => e.pattern);
+  const drillAll = recentLog.filter(e => e.type === 'drill').map(e => e.jp);
+
+  const summary = `
+過去7日間の学習ログ（合計${recentLog.length}件）:
+【単語カード】
+- 「わからない」: ${[...new Set(vocabUnknown)].join('、') || 'なし'} (${vocabUnknown.length}回)
+- 「うろ覚え」: ${[...new Set(vocabFuzzy)].join('、') || 'なし'} (${vocabFuzzy.length}回)
+- 「知ってる」: ${vocabKnow.length}回
+【文法ドリル】
+- 練習したパターン: ${[...new Set(grammarAll)].join('、') || 'なし'}
+【スピーキングドリル】
+- 練習したお題: ${[...new Set(drillAll)].join('、') || 'なし'}
+`.trim();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 400,
+        messages: [{
+          role: 'user',
+          content: `タイ語学習者の1週間の学習ログを分析してください。\n${summary}\n\n以下を日本語で簡潔に答えてください（合計5〜8行）：\n1. 弱点・苦手なポイント（具体的な単語・文法パターン名を挙げて）\n2. 重点的に練習すべきこと（1〜2点）\n3. 励ましのひとこと`
+        }]
+      })
+    });
+    const data = await res.json();
+    textEl.textContent = data.content[0].text;
+    resultEl.style.display = 'flex';
+
+    // 弱点単語が5つ以上あれば集中ドリルボタン表示
+    const weakWords = [...new Set([...vocabUnknown, ...vocabFuzzy])];
+    if (weakWords.length >= 3) {
+      focusBtn.style.display = 'block';
+      focusBtn.dataset.weakWords = JSON.stringify(weakWords);
+    } else {
+      focusBtn.style.display = 'none';
+    }
+    statusEl.textContent = `分析完了（${recentLog.length}件のログをもとに）`;
+  } catch(e) {
+    textEl.textContent = '⚠️ 分析エラー: ' + e.message;
+    resultEl.style.display = 'flex';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔍 1週間の弱点を分析する';
+  }
+}
+
+function startFocusDrill() {
+  const focusBtn = document.getElementById('focusDrillBtn');
+  const weakWordsRaw = focusBtn.dataset.weakWords;
+  if (!weakWordsRaw) return;
+  const weakWords = JSON.parse(weakWordsRaw);
+
+  // vocabDataから弱点単語を検索
+  const allVocab = Object.values(vocabData).flat();
+  const focusCards = allVocab.filter(c => weakWords.includes(c.thai));
+
+  if (focusCards.length === 0) {
+    alert('弱点単語が単語データに見つかりませんでした。');
+    return;
+  }
+
+  // 集中ドリル用にカードをセット
+  currentCards = shuffle([...focusCards]);
+  cardIndex = 0;
+  currentCategory = 'focus';
+
+  // 単語カードタブに切り替えてカード表示
+  switchTab('vocab');
+  document.getElementById('vocabDrillArea').style.display = 'block';
+  document.getElementById('homeScreen').style.display = 'none';
+  showCard();
 }
 
 // ---- 会議シミュレーション ----
@@ -1594,6 +1727,8 @@ Object.assign(window, {
   // Phase 4
   switchGrammarMode, selectGrammarPattern, startGrammarDrill,
   submitGrammarDrill, nextGrammarDrill, playGrammarModel, toggleGrammarVoice,
+  // Phase 5
+  analyzeWeakness, startFocusDrill,
   // Phase 3
   switchDrillMode, setDrillScene, nextDrill, prevDrill,
   toggleDrillRecord, playDrillModel,
