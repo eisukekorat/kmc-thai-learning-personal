@@ -1388,7 +1388,11 @@ async function sendToWhisper(audioBlob) {
   const key = getOpenAIKey();
   if (!key) return null;
   const form = new FormData();
-  form.append('file', audioBlob, 'audio.webm');
+  // MIMEタイプに合わせて拡張子を決定（iOS SafariはMP4を使用）
+  const ext = audioBlob.type.includes('mp4') ? 'm4a'
+             : audioBlob.type.includes('ogg') ? 'ogg'
+             : 'webm';
+  form.append('file', audioBlob, `audio.${ext}`);
   form.append('model', 'whisper-1');
   form.append('language', 'th');
   const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -1402,14 +1406,25 @@ async function sendToWhisper(audioBlob) {
 }
 
 // ---- MediaRecorder 共通 ----
+// iOS SafariはaudioWebMに対応しないためMP4に自動切替
+function getSupportedMimeType() {
+  const types = ['audio/webm', 'audio/mp4', 'audio/aac', 'audio/ogg'];
+  for (const t of types) {
+    if (MediaRecorder.isTypeSupported(t)) return t;
+  }
+  return ''; // ブラウザのデフォルトに任せる
+}
+
 async function startMediaRecorder(onStop) {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   audioChunks = [];
-  mediaRecorder = new MediaRecorder(stream);
+  const mimeType = getSupportedMimeType();
+  mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+  const actualMime = mediaRecorder.mimeType || mimeType || 'audio/webm';
   mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
   mediaRecorder.onstop = async () => {
     stream.getTracks().forEach(t => t.stop());
-    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+    const blob = new Blob(audioChunks, { type: actualMime });
     await onStop(blob);
   };
   mediaRecorder.start();
