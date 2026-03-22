@@ -171,11 +171,18 @@
     <div class="card-counter" id="cardCounter">1 / 10</div>
 
     <div class="fc-buttons" id="fcButtons" style="display:none">
-      <button class="fc-btn again" onclick="nextCard(false)">もう一度</button>
-      <button class="fc-btn good" onclick="nextCard(true)">覚えた ✓</button>
+      <button class="fc-btn unknown-btn" onclick="nextCard('unknown')">😕 知らない</button>
+      <button class="fc-btn fuzzy-btn" onclick="nextCard('fuzzy')">🤔 あやしい</button>
+      <button class="fc-btn good" onclick="nextCard('know')">✅ 知ってる</button>
     </div>
     <div id="fcNext" style="display:none">
       <button class="fc-btn skip" onclick="startCards()">もう一周する</button>
+    </div>
+
+    <!-- Claude ヒントエリア -->
+    <div id="claudeTipArea" style="display:none; width:100%; max-width:440px; background:var(--surface2); border:1px solid var(--accent2); border-radius:12px; padding:14px 16px; margin-top:4px;">
+      <div style="font-size:0.75rem; color:var(--accent2); margin-bottom:8px;">🤖 Claudeからの覚え方ヒント</div>
+      <div id="claudeTipText" style="font-size:0.84rem; color:var(--text-dim); line-height:1.7; white-space:pre-wrap;"></div>
     </div>
 
     <!-- QUIZ MODE AREA -->

@@ -3,20 +3,101 @@
 // Application logic
 // =============================================
 
-// ---- Audio ----
-function playAudio(type) {
-  const text = type === 'phrase' ?
-    document.getElementById('phraseThai').textContent :
-    document.getElementById('fcThai').textContent;
+// ================================
+// AUDIO: OpenAI TTS（フォールバック: Web Speech API）
+// ================================
+const ttsCache = new Map(); // メモリキャッシュ（同じ単語を何度も呼ばない）
 
-  if (text === '–' || text.includes('🎉')) return;
+async function playAudioTTS(text) {
+  if (!text || text === '–' || text.includes('🎉')) return;
 
+  const openaiKey = getOpenAIKey();
+
+  // OpenAI TTS が使える場合
+  if (openaiKey) {
+    try {
+      if (ttsCache.has(text)) {
+        const url = ttsCache.get(text);
+        new Audio(url).play();
+        return;
+      }
+      const res = await fetch('https://api.openai.com/v1/audio/speech', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + openaiKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'tts-1',
+          input: text,
+          voice: 'nova',
+          speed: speechRate
+        })
+      });
+      if (!res.ok) throw new Error('TTS API error: ' + res.status);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      ttsCache.set(text, url);
+      new Audio(url).play();
+      return;
+    } catch (e) {
+      console.warn('OpenAI TTS失敗、Web Speech APIにフォールバック:', e);
+    }
+  }
+
+  // フォールバック: Web Speech API
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'th-TH';
     utterance.rate = speechRate;
     window.speechSynthesis.speak(utterance);
+  }
+}
+
+function playAudio(type) {
+  const text = type === 'phrase' ?
+    document.getElementById('phraseThai').textContent :
+    document.getElementById('fcThai').textContent;
+  playAudioTTS(text);
+}
+
+// ================================
+// CLAUDE: 覚え方ヒント生成
+// ================================
+async function fetchClaudeTip(word) {
+  const key = getClaudeKey();
+  const tipArea = document.getElementById('claudeTipArea');
+  const tipText = document.getElementById('claudeTipText');
+  if (!key || !tipArea || !tipText) return;
+
+  tipArea.style.display = 'block';
+  tipText.textContent = '考え中...';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 300,
+        messages: [{
+          role: 'user',
+          content: `タイ語単語「${word.thai}」（読み：${word.romaji}、意味：${word.jp}）の覚え方を日本語で教えてください。以下を簡潔に（合計5行以内）：\n・発音・語感のコツ（日本語の音に近いものがあれば）\n・語呂合わせや記憶の引っかかり\n・製造業・職場での短い例文（タイ語と日本語訳）`
+        }]
+      })
+    });
+    if (!res.ok) throw new Error('Claude API error: ' + res.status);
+    const data = await res.json();
+    tipText.textContent = data.content[0].text;
+  } catch (e) {
+    tipText.textContent = '⚠️ ヒントの取得に失敗しました（APIキーを設定画面で確認してください）';
+    console.error('Claude tip error:', e);
   }
 }
 
@@ -420,6 +501,9 @@ function showCard() {
   document.getElementById('cardCounter').textContent = (cardIndex + 1) + ' / ' + currentCards.length;
   document.getElementById('fcButtons').style.display = 'none';
   document.getElementById('tapHint').style.display = '';
+  // Claudeヒントエリアをリセット
+  const tipArea = document.getElementById('claudeTipArea');
+  if (tipArea) tipArea.style.display = 'none';
   revealed = false;
   // 自動再生
   if (autoPlayAudio) {
@@ -440,23 +524,42 @@ function showMeaning() {
   }
 }
 
-function nextCard(knew) {
+// rating: 'know' | 'fuzzy' | 'unknown'（後方互換のため true/false も受け付ける）
+function nextCard(rating) {
+  // 後方互換
+  if (rating === true) rating = 'know';
+  if (rating === false) rating = 'unknown';
+
   const c = currentCards[cardIndex];
   const allVocab = vocabData[currentCategory].slice(0, 50);
   const realIndex = allVocab.indexOf(c);
 
+  // Claudeヒントエリアをリセット
+  const tipArea = document.getElementById('claudeTipArea');
+  if (tipArea) tipArea.style.display = 'none';
+
   if (vocabMode === 'learn') {
-    progress.vocabLearned[currentCategory + '_' + realIndex] = knew;
+    progress.vocabLearned[currentCategory + '_' + realIndex] = (rating === 'know');
     saveProgress();
 
-    if (knew) {
+    if (rating === 'know') {
       recordSrs(currentCategory, realIndex);
+    } else if (rating === 'fuzzy') {
+      recordSrsFuzzy(currentCategory, realIndex);
     } else {
+      // 知らない: すぐ後ろに再キュー
       currentCards.push(currentCards[cardIndex]);
+      // Claudeにヒントを依頼
+      fetchClaudeTip(c);
     }
   } else if (vocabMode === 'review') {
-    if (knew) {
+    if (rating === 'know') {
       recordSrs(currentCategory, realIndex);
+    } else if (rating === 'fuzzy') {
+      recordSrsFuzzy(currentCategory, realIndex);
+    } else {
+      currentCards.push(currentCards[cardIndex]);
+      fetchClaudeTip(c);
     }
   }
 
@@ -578,6 +681,19 @@ function recordSrs(category, index) {
     lastReviewed: today,
     reviewCount: newCount,
     nextReview: nextReview
+  };
+  saveSrsData();
+}
+
+// あやしい → 翌日に固定（reviewCountはそのまま）
+function recordSrsFuzzy(category, index) {
+  const key = category + '_' + index;
+  const today = getTodayStr();
+  const existing = srsData[key] || { reviewCount: 0 };
+  srsData[key] = {
+    lastReviewed: today,
+    reviewCount: existing.reviewCount,
+    nextReview: addDays(today, 1)
   };
   saveSrsData();
 }

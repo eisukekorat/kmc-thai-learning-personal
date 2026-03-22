@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "kmc-thai-learning-personal",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8901", "--directory", "/Users/eisukeoseto/Projects/kmc-thai-learning-personal"],
+      "port": 8901
+    },
+    {
       "name": "kmc-thai-learning",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8899", "--directory", "/Users/eisukeoseto/Projects/kmc-thai-learning"],

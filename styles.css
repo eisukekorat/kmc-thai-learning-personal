@@ -417,6 +417,8 @@ body {
 .fc-btn.good { background: var(--green); color: var(--bg); }
 .fc-btn.again { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 .fc-btn.skip { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.fc-btn.unknown-btn { background: var(--red); color: #fff; }
+.fc-btn.fuzzy-btn { background: var(--accent); color: var(--bg); }
 
 /* ---- Quiz Mode ---- */
 .quiz-choices {
