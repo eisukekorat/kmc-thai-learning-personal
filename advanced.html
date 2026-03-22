@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>タイ語学習ダッシュボード - Level 3対策</title>
+<title>タイ語学習アプリ Personal - AI強化版</title>
 <meta name="theme-color" content="#0a0e14">
 <link rel="manifest" href="manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
@@ -27,8 +27,8 @@
 </div>
 
 <div class="header">
-  <h1>ภาษาไทย レベル3 学習</h1>
-  <p class="tagline">職場で使えるタイ語を効率的に習得</p>
+  <h1>ภาษาไทย AI強化版 Personal</h1>
+  <p class="tagline">職場・会議・指示出しに使えるタイ語を習得</p>
   <p class="subtitle">毎日少しずつ・無理なく継続</p>
   <div class="streak-bar">
     <span>🔥 連続学習</span>
@@ -286,6 +286,37 @@
         <button class="speed-btn" onclick="setSpeechRate(0.5, this)">🐢 0.5x（ゆっくり）</button>
         <button class="speed-btn active" onclick="setSpeechRate(0.8, this)">▶ 0.8x（標準）</button>
         <button class="speed-btn" onclick="setSpeechRate(1.0, this)">🐇 1.0x（速い）</button>
+      </div>
+    </div>
+
+    <!-- API Keys -->
+    <div class="setting-item" style="flex-direction:column; align-items:flex-start; gap:16px; margin-top:8px;">
+      <div class="setting-info">
+        <div class="setting-label">🤖 AI API キー設定</div>
+        <div class="setting-desc">キーはこの端末のみに保存されます（GitHubには送信されません）</div>
+      </div>
+
+      <div style="width:100%; display:flex; flex-direction:column; gap:10px;">
+        <label style="font-size:0.82rem; color:var(--muted);">OpenAI API Key（TTS・音声認識）</label>
+        <div style="display:flex; gap:8px;">
+          <input type="password" id="openaiKeyInput" placeholder="sk-..." style="flex:1; background:var(--surface3); border:1px solid var(--border); border-radius:8px; padding:10px 12px; color:var(--text); font-size:0.85rem; font-family:monospace;">
+          <button onclick="saveApiKey('openai')" style="background:var(--accent); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-size:0.82rem; white-space:nowrap;">保存</button>
+        </div>
+        <div id="openaiKeyStatus" style="font-size:0.78rem; color:var(--muted); min-height:1em;"></div>
+      </div>
+
+      <div style="width:100%; display:flex; flex-direction:column; gap:10px;">
+        <label style="font-size:0.82rem; color:var(--muted);">Claude API Key（AI分析・例文生成）</label>
+        <div style="display:flex; gap:8px;">
+          <input type="password" id="claudeKeyInput" placeholder="sk-ant-..." style="flex:1; background:var(--surface3); border:1px solid var(--border); border-radius:8px; padding:10px 12px; color:var(--text); font-size:0.85rem; font-family:monospace;">
+          <button onclick="saveApiKey('claude')" style="background:var(--accent2); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-size:0.82rem; white-space:nowrap;">保存</button>
+        </div>
+        <div id="claudeKeyStatus" style="font-size:0.78rem; color:var(--muted); min-height:1em;"></div>
+      </div>
+
+      <div style="width:100%; display:flex; gap:8px; flex-wrap:wrap;">
+        <button onclick="showApiKeys()" style="background:var(--surface3); color:var(--text-dim); border:1px solid var(--border); border-radius:8px; padding:8px 14px; cursor:pointer; font-size:0.8rem;">👁 表示/非表示</button>
+        <button onclick="clearApiKeys()" style="background:var(--surface3); color:var(--red); border:1px solid var(--border); border-radius:8px; padding:8px 14px; cursor:pointer; font-size:0.8rem;">🗑 全削除</button>
       </div>
     </div>
 

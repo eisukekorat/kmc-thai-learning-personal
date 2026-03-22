@@ -38,6 +38,65 @@ function toggleAutoPlay(val) {
   localStorage.setItem('autoPlayAudio', val);
 }
 
+// ================================
+// API KEY MANAGEMENT
+// ================================
+function saveApiKey(type) {
+  const inputId = type === 'openai' ? 'openaiKeyInput' : 'claudeKeyInput';
+  const statusId = type === 'openai' ? 'openaiKeyStatus' : 'claudeKeyStatus';
+  const storageKey = type === 'openai' ? 'openaiApiKey' : 'claudeApiKey';
+  const val = document.getElementById(inputId).value.trim();
+  if (!val) {
+    document.getElementById(statusId).textContent = '⚠️ キーを入力してください';
+    return;
+  }
+  localStorage.setItem(storageKey, val);
+  document.getElementById(statusId).textContent = '✅ 保存しました';
+  document.getElementById(inputId).value = '●'.repeat(Math.min(val.length, 20));
+  setTimeout(() => { document.getElementById(statusId).textContent = ''; }, 3000);
+}
+
+function loadApiKeyStatus() {
+  const openaiKey = localStorage.getItem('openaiApiKey');
+  const claudeKey = localStorage.getItem('claudeApiKey');
+  const openaiStatus = document.getElementById('openaiKeyStatus');
+  const claudeStatus = document.getElementById('claudeKeyStatus');
+  if (openaiStatus) openaiStatus.textContent = openaiKey ? '✅ 設定済み' : '未設定';
+  if (claudeStatus) claudeStatus.textContent = claudeKey ? '✅ 設定済み' : '未設定';
+}
+
+let apiKeysVisible = false;
+function showApiKeys() {
+  apiKeysVisible = !apiKeysVisible;
+  const openaiKey = localStorage.getItem('openaiApiKey') || '';
+  const claudeKey = localStorage.getItem('claudeApiKey') || '';
+  const openaiInput = document.getElementById('openaiKeyInput');
+  const claudeInput = document.getElementById('claudeKeyInput');
+  if (openaiInput) {
+    openaiInput.type = apiKeysVisible ? 'text' : 'password';
+    openaiInput.value = apiKeysVisible ? openaiKey : (openaiKey ? '●'.repeat(Math.min(openaiKey.length, 20)) : '');
+  }
+  if (claudeInput) {
+    claudeInput.type = apiKeysVisible ? 'text' : 'password';
+    claudeInput.value = apiKeysVisible ? claudeKey : (claudeKey ? '●'.repeat(Math.min(claudeKey.length, 20)) : '');
+  }
+}
+
+function clearApiKeys() {
+  if (!confirm('APIキーを全て削除しますか？')) return;
+  localStorage.removeItem('openaiApiKey');
+  localStorage.removeItem('claudeApiKey');
+  const openaiInput = document.getElementById('openaiKeyInput');
+  const claudeInput = document.getElementById('claudeKeyInput');
+  if (openaiInput) openaiInput.value = '';
+  if (claudeInput) claudeInput.value = '';
+  loadApiKeyStatus();
+}
+
+// Helper: get saved API keys (for use in other modules)
+function getOpenAIKey() { return localStorage.getItem('openaiApiKey') || ''; }
+function getClaudeKey() { return localStorage.getItem('claudeApiKey') || ''; }
+
 // Init settings UI on load
 document.addEventListener('DOMContentLoaded', function() {
   const toggle = document.getElementById('autoPlayToggle');
@@ -57,6 +116,8 @@ document.addEventListener('DOMContentLoaded', function() {
     b.classList.remove('active');
     if (b.getAttribute('onclick') && b.getAttribute('onclick').includes("'" + sceneFilter + "'")) b.classList.add('active');
   });
+  // Init API key status
+  loadApiKeyStatus();
 });
 
 // ================================
