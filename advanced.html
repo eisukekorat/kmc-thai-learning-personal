@@ -82,6 +82,25 @@
     </div>
     <button class="srs-start-btn" id="srsStartBtn" onclick="startSrsReview()" style="display:none">▶ 復習開始</button>
   </div>
+
+  <!-- 弱点分析 -->
+  <div class="srs-review-box" style="margin-top:16px;">
+    <div class="srs-title">📊 弱点分析</div>
+    <div id="weaknessStatus" style="font-size:0.82rem; color:var(--muted); padding:6px 0;">
+      学習を続けると弱点を自動分析できます
+    </div>
+    <button onclick="analyzeWeakness()" id="analyzeBtn" class="srs-start-btn" style="display:block; margin-top:8px;">🔍 1週間の弱点を分析する</button>
+
+    <div id="weaknessResult" style="display:none; margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+      <div style="background:var(--surface3); border:1px solid var(--accent2); border-radius:10px; padding:12px;">
+        <div style="font-size:0.72rem; color:var(--accent2); margin-bottom:6px;">🤖 Claude の分析結果</div>
+        <div id="weaknessAnalysisText" style="font-size:0.83rem; color:var(--text-dim); line-height:1.7; white-space:pre-wrap;"></div>
+      </div>
+      <div id="focusDrillBtn" style="display:none; text-align:center;">
+        <button onclick="startFocusDrill()" style="background:var(--red); color:#fff; border:none; border-radius:12px; padding:12px 28px; cursor:pointer; font-size:0.9rem; font-weight:600; width:100%;">🎯 弱点単語の集中ドリル開始</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- WORKPLACE PHRASES -->
