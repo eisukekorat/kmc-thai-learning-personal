@@ -405,8 +405,8 @@ function setCategory(cat, btn) {
 function getBaseVocab(category) {
   if (category === 'custom') return getCustomVocab();
   if (category === 'focus') return Object.values(vocabData).flat();
-  // work・qualityは80語、daily・politeは50語
-  const limit = (category === 'work' || category === 'quality') ? 80 : 50;
+  // 全カテゴリ80語
+  const limit = 80;
   return (vocabData[category] || []).slice(0, limit);
 }
 
