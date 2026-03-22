@@ -1,11 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="36" fill="#0a0e14"/>
-  <rect x="12" y="12" width="168" height="168" rx="24" fill="#15191f" stroke="#262c38" stroke-width="1.5"/>
-  <!-- Thai flag stripes -->
-  <rect x="28" y="54" width="136" height="20" rx="4" fill="#c8102e"/>
-  <rect x="28" y="78" width="136" height="20" rx="4" fill="#f5f5f5"/>
-  <rect x="28" y="102" width="136" height="20" rx="4" fill="#2d2e82"/>
-  <!-- Text -->
-  <text x="96" y="148" font-family="serif" font-size="18" font-weight="700" fill="#d4b87a" text-anchor="middle">ภาษาไทย</text>
-  <text x="96" y="34" font-family="sans-serif" font-size="11" font-weight="600" fill="#b8956e" text-anchor="middle">KMC</text>
+  <!-- Dark teal background -->
+  <rect width="192" height="192" rx="36" fill="#0f1a1a"/>
+
+  <!-- Gear ring (8 teeth, fill-rule=evenodd creates center hole) -->
+  <path fill="#2dd4bf" fill-rule="evenodd" d="
+    M 90.7 40.8 L 92.1 31.6 L 99.9 31.6 L 101.3 40.8
+    A 55.5 55.5 0 0 1 131.4 53.3
+    L 138.8 47.7 L 144.3 53.3 L 138.8 60.6
+    A 55.5 55.5 0 0 1 151.2 90.7
+    L 160.4 92.1 L 160.4 99.9 L 151.2 101.3
+    A 55.5 55.5 0 0 1 138.8 131.4
+    L 144.3 138.8 L 138.8 144.3 L 131.4 138.8
+    A 55.5 55.5 0 0 1 101.3 151.2
+    L 99.9 160.4 L 92.1 160.4 L 90.7 151.2
+    A 55.5 55.5 0 0 1 60.6 138.8
+    L 53.3 144.3 L 47.7 138.8 L 53.3 131.4
+    A 55.5 55.5 0 0 1 40.8 101.3
+    L 31.6 99.9 L 31.6 92.1 L 40.8 90.7
+    A 55.5 55.5 0 0 1 53.3 60.6
+    L 47.7 53.3 L 53.3 47.7 L 60.6 53.3
+    A 55.5 55.5 0 0 1 90.7 40.8 Z
+    M 137 96 A 41 41 0 0 1 96 137 A 41 41 0 0 1 55 96 A 41 41 0 0 1 96 55 A 41 41 0 0 1 137 96 Z
+  "/>
+
+  <!-- AI text centered in the hole -->
+  <text x="96" y="96"
+    font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif"
+    font-size="43"
+    font-weight="900"
+    fill="#ffffff"
+    text-anchor="middle"
+    dominant-baseline="central">AI</text>
+
+  <!-- Thai flag stripes at bottom -->
+  <rect x="55" y="170" width="82" height="5" rx="1.5" fill="#c8102e"/>
+  <rect x="55" y="176" width="82" height="5" rx="1.5" fill="#f0f0f0"/>
+  <rect x="55" y="182" width="82" height="5" rx="1.5" fill="#2d2e82"/>
 </svg>
