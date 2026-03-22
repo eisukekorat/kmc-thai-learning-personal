@@ -92,7 +92,7 @@
     </div>
     <button onclick="analyzeWeakness()" id="analyzeBtn" class="srs-start-btn" style="display:block; margin-top:8px;">🔍 1週間の弱点を分析する</button>
 
-    <div id="weaknessResult" style="display:none; margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+    <div id="weaknessResult" style="display:none; margin-top:12px; flex-direction:column; gap:10px;">
       <div style="background:var(--surface3); border:1px solid var(--accent2); border-radius:10px; padding:12px;">
         <div style="font-size:0.72rem; color:var(--accent2); margin-bottom:6px;">🤖 Claude の分析結果</div>
         <div id="weaknessAnalysisText" style="font-size:0.83rem; color:var(--text-dim); line-height:1.7; white-space:pre-wrap;"></div>
@@ -239,7 +239,7 @@
     </div>
 
     <!-- 問題エリア -->
-    <div id="grammarDrillQuestionArea" style="display:none; display:flex; flex-direction:column; gap:14px;">
+    <div id="grammarDrillQuestionArea" style="display:none; flex-direction:column; gap:14px;">
 
       <!-- 問題カード -->
       <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px; text-align:center;">
@@ -412,7 +412,7 @@
     </div>
 
     <!-- 結果エリア -->
-    <div id="drillResultArea" style="display:none; display:flex; flex-direction:column; gap:12px;">
+    <div id="drillResultArea" style="display:none; flex-direction:column; gap:12px;">
       <!-- Whisper結果 -->
       <div style="background:var(--surface2); border-radius:12px; padding:14px;">
         <div style="font-size:0.72rem; color:var(--muted); margin-bottom:6px;">🎧 あなたが言ったこと（Whisper認識）</div>
