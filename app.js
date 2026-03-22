@@ -1414,6 +1414,355 @@ if (typeof roleplayData !== 'undefined') {
   renderRoleplayScenes();
 }
 
+// =============================================
+// PHASE 3: 指示出しドリル＋会議シミュレーション
+// =============================================
+
+// ---- ドリルシナリオデータ ----
+const drillScenarios = [
+  // 朝礼
+  { scene: 'morning', jp: '今日の生産目標は500個です', thai: 'เป้าหมายการผลิตวันนี้คือ 500 ชิ้นครับ', romaji: 'pâo-mǎai gaan-pà-lìt wan-níi khue 500 chín khráp' },
+  { scene: 'morning', jp: '安全に気をつけて作業してください', thai: 'กรุณาทำงานด้วยความระมัดระวังครับ', romaji: 'gà-rú-naa tam-ngaan dûay khwaam-rá-mát-rá-wang khráp' },
+  { scene: 'morning', jp: '全員揃いましたか？', thai: 'ครบทุกคนแล้วหรือครับ', romaji: 'khróp túk khon láew rʉ̌e khráp' },
+  { scene: 'morning', jp: '今日は残業があります', thai: 'วันนี้มีทำงานล่วงเวลาครับ', romaji: 'wan-níi mii tam-ngaan lûang-wee-laa khráp' },
+  // 不良対応
+  { scene: 'defect', jp: 'この部品を検査してください', thai: 'กรุณาตรวจสอบชิ้นส่วนนี้ครับ', romaji: 'gà-rú-naa trùat-sòp chín-sùan níi khráp' },
+  { scene: 'defect', jp: '不良品を別にしておいてください', thai: 'กรุณาแยกของเสียออกไว้ก่อนครับ', romaji: 'gà-rú-naa yâek khǎawng-sǐa àwk wái gàwn khráp' },
+  { scene: 'defect', jp: '原因は何ですか？', thai: 'สาเหตุคืออะไรครับ', romaji: 'sǎa-hèet khue à-rai khráp' },
+  { scene: 'defect', jp: '何個不良がありましたか？', thai: 'มีของเสียกี่ชิ้นครับ', romaji: 'mii khǎawng-sǐa gìi chín khráp' },
+  { scene: 'defect', jp: 'ラインを止めてください', thai: 'กรุณาหยุดสายการผลิตครับ', romaji: 'gà-rú-naa yùt sǎai-gaan-pà-lìt khráp' },
+  // 作業指示
+  { scene: 'instruction', jp: 'ゆっくり丁寧にやってください', thai: 'กรุณาทำอย่างช้าๆ และระมัดระวังครับ', romaji: 'gà-rú-naa tam yàang cháa-cháa láe rá-mát-rá-wang khráp' },
+  { scene: 'instruction', jp: 'この手順に従ってください', thai: 'กรุณาทำตามขั้นตอนนี้ครับ', romaji: 'gà-rú-naa tam taam khân-tàawn níi khráp' },
+  { scene: 'instruction', jp: '終わったら報告してください', thai: 'เสร็จแล้วกรุณาแจ้งให้ทราบครับ', romaji: 'sèt láew gà-rú-naa jâeng hâi sâap khráp' },
+  { scene: 'instruction', jp: 'こっちを先にやってください', thai: 'กรุณาทำอันนี้ก่อนครับ', romaji: 'gà-rú-naa tam an-níi gàwn khráp' },
+  // 安全
+  { scene: 'safety', jp: 'ヘルメットをかぶってください', thai: 'กรุณาสวมหมวกนิรภัยครับ', romaji: 'gà-rú-naa sùam mùak-ní-rá-phai khráp' },
+  { scene: 'safety', jp: '手袋をつけてください', thai: 'กรุณาสวมถุงมือครับ', romaji: 'gà-rú-naa sùam tǔng-mue khráp' },
+  { scene: 'safety', jp: '走らないでください', thai: 'กรุณาอย่าวิ่งครับ', romaji: 'gà-rú-naa yàa wîng khráp' },
+  { scene: 'safety', jp: '危険ですので近づかないでください', thai: 'อันตราย กรุณาอย่าเข้าใกล้ครับ', romaji: 'an-tà-raai gà-rú-naa yàa khâo glâi khráp' },
+  { scene: 'safety', jp: '消火器はどこにありますか？', thai: 'ถังดับเพลิงอยู่ที่ไหนครับ', romaji: 'tǎng-dàp-phloeng yùu thîi-nǎi khráp' },
+];
+
+// 会議シミュレーション用のシステムプロンプト
+const simSystemPrompts = {
+  morning: `あなたはタイの製造工場で働く従業員（ソムチャイ）です。日本人マネージャーが朝礼で指示を出しています。
+マネージャーのタイ語の発話に対して、タイ人従業員として自然に返答してください。
+返答は必ずタイ語でしてください（最初はシンプルな質問か確認の返事）。
+返答の後に（）内に日本語訳を付けてください。形式：[タイ語]（日本語訳）`,
+  defect: `あなたはタイの製造工場の品質担当スタッフ（プリーヤー）です。不良品が発生し、日本人マネージャーが確認しています。
+マネージャーのタイ語の発話に対して、不良の状況を説明するタイ人スタッフとして返答してください。
+返答は必ずタイ語でしてください。返答の後に（）内に日本語訳を付けてください。形式：[タイ語]（日本語訳）`,
+  delivery: `あなたはタイのサプライヤー担当（チャナポン）です。納期について日本人バイヤーと話し合っています。
+マネージャーのタイ語の発話に対して、納期・在庫について答えるタイ人スタッフとして返答してください。
+返答は必ずタイ語でしてください。返答の後に（）内に日本語訳を付けてください。形式：[タイ語]（日本語訳）`,
+  safety: `あなたはタイの製造工場のスタッフ（ナッタウット）です。日本人マネージャーが安全指示を出しています。
+マネージャーのタイ語の発話に対して、指示を受けたスタッフとして自然に返答してください。
+返答は必ずタイ語でしてください。返答の後に（）内に日本語訳を付けてください。形式：[タイ語]（日本語訳）`,
+};
+
+const simOpeners = {
+  morning: { thai: 'สวัสดีครับ วันนี้มีอะไรพิเศษไหมครับ', jp: 'おはようございます。今日は何か特別なことありますか？', name: 'ソムチャイ' },
+  defect: { thai: 'คุณผู้จัดการครับ มีปัญหาเรื่องของเสียครับ', jp: 'マネージャー、不良品の問題があります', name: 'プリーヤー' },
+  delivery: { thai: 'สวัสดีครับ โทรมาเรื่องอะไรครับ', jp: 'こんにちは。どのようなご用件でしょうか？', name: 'チャナポン' },
+  safety: { thai: 'สวัสดีครับ มีอะไรให้ช่วยครับ', jp: 'こんにちは。何かお手伝いできますか？', name: 'ナッタウット' },
+};
+
+// ---- ドリル状態 ----
+let drillList = [...drillScenarios];
+let drillIndex = 0;
+let drillSceneFilter = 'all';
+let drillMode = 'drill'; // 'drill' | 'sim'
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let simHistory = [];
+let currentSimScene = null;
+
+function switchDrillMode(mode, btn) {
+  drillMode = mode;
+  document.querySelectorAll('#drill .mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('drillPanel').style.display = mode === 'drill' ? '' : 'none';
+  document.getElementById('simPanel').style.display = mode === 'sim' ? '' : 'none';
+}
+
+function setDrillScene(scene, btn) {
+  drillSceneFilter = scene;
+  document.querySelectorAll('#drill .scene-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  drillList = scene === 'all' ? [...drillScenarios] : drillScenarios.filter(s => s.scene === scene);
+  drillList = shuffle(drillList);
+  drillIndex = 0;
+  renderDrillCard();
+}
+
+function renderDrillCard() {
+  if (drillList.length === 0) return;
+  const s = drillList[drillIndex % drillList.length];
+  document.getElementById('drillPromptJP').textContent = s.jp;
+  const sceneNames = { morning: '☀️ 朝礼', defect: '⚠️ 不良対応', instruction: '📢 作業指示', safety: '⛑ 安全' };
+  document.getElementById('drillSceneTag').textContent = sceneNames[s.scene] || '';
+  document.getElementById('drillCounter').textContent = (drillIndex % drillList.length + 1) + ' / ' + drillList.length;
+  // 結果エリアをリセット
+  document.getElementById('drillResultArea').style.display = 'none';
+  document.getElementById('drillUserText').textContent = '–';
+  document.getElementById('drillFeedback').textContent = '–';
+  document.getElementById('drillModelThai').textContent = '–';
+  document.getElementById('drillModelRomaji').textContent = '–';
+  document.getElementById('drillModelJP').textContent = '–';
+  // 録音ボタンをリセット
+  resetRecordBtn('drillRecordBtn', 'drillRecordStatus', 'ボタンを押してタイ語で話す');
+}
+
+function nextDrill() { drillIndex++; renderDrillCard(); }
+function prevDrill() { drillIndex = Math.max(0, drillIndex - 1); renderDrillCard(); }
+
+function resetRecordBtn(btnId, statusId, msg) {
+  const btn = document.getElementById(btnId);
+  if (btn) { btn.textContent = '🎙'; btn.style.borderColor = 'var(--red)'; btn.style.background = 'var(--surface2)'; }
+  const st = document.getElementById(statusId);
+  if (st) st.textContent = msg;
+}
+
+// ---- Whisper API ----
+async function sendToWhisper(audioBlob) {
+  const key = getOpenAIKey();
+  if (!key) return null;
+  const form = new FormData();
+  form.append('file', audioBlob, 'audio.webm');
+  form.append('model', 'whisper-1');
+  form.append('language', 'th');
+  const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + key },
+    body: form
+  });
+  if (!res.ok) throw new Error('Whisper error: ' + res.status);
+  const data = await res.json();
+  return data.text;
+}
+
+// ---- MediaRecorder 共通 ----
+async function startMediaRecorder(onStop) {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  audioChunks = [];
+  mediaRecorder = new MediaRecorder(stream);
+  mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+  mediaRecorder.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop());
+    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+    await onStop(blob);
+  };
+  mediaRecorder.start();
+  isRecording = true;
+}
+
+function stopMediaRecorder() {
+  if (mediaRecorder && isRecording) {
+    mediaRecorder.stop();
+    isRecording = false;
+  }
+}
+
+// ---- 指示出しドリル 録音 ----
+async function toggleDrillRecord() {
+  if (!getOpenAIKey()) {
+    document.getElementById('drillRecordStatus').textContent = '⚠️ 設定画面でOpenAI APIキーを入力してください';
+    return;
+  }
+  if (!isRecording) {
+    try {
+      const btn = document.getElementById('drillRecordBtn');
+      btn.textContent = '⏹';
+      btn.style.borderColor = 'var(--green)';
+      btn.style.background = 'rgba(94,184,138,0.15)';
+      document.getElementById('drillRecordStatus').textContent = '録音中... もう一度押すと停止';
+      await startMediaRecorder(async (blob) => {
+        document.getElementById('drillRecordStatus').textContent = '認識中...';
+        try {
+          const text = await sendToWhisper(blob);
+          document.getElementById('drillUserText').textContent = text || '（認識できませんでした）';
+          document.getElementById('drillResultArea').style.display = 'flex';
+          if (text) await getDrillFeedback(text);
+        } catch(e) {
+          document.getElementById('drillRecordStatus').textContent = '⚠️ 認識エラー: ' + e.message;
+        }
+        resetRecordBtn('drillRecordBtn', 'drillRecordStatus', 'もう一度話す');
+      });
+    } catch(e) {
+      document.getElementById('drillRecordStatus').textContent = '⚠️ マイクが使えません: ' + e.message;
+      isRecording = false;
+    }
+  } else {
+    stopMediaRecorder();
+    document.getElementById('drillRecordStatus').textContent = '処理中...';
+  }
+}
+
+// ---- Claudeフィードバック ----
+async function getDrillFeedback(userText) {
+  const key = getClaudeKey();
+  const scenario = drillList[drillIndex % drillList.length];
+  document.getElementById('drillFeedback').textContent = '考え中...';
+  // お手本を先に表示
+  document.getElementById('drillModelThai').textContent = scenario.thai;
+  document.getElementById('drillModelRomaji').textContent = scenario.romaji;
+  document.getElementById('drillModelJP').textContent = scenario.jp;
+
+  if (!key) {
+    document.getElementById('drillFeedback').textContent = '（Claude APIキーを設定するとフィードバックが得られます）';
+    return;
+  }
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 250,
+        messages: [{
+          role: 'user',
+          content: `タイ語学習者のスピーキング練習のフィードバックをしてください。\nお題（日本語）：「${scenario.jp}」\nお手本（タイ語）：「${scenario.thai}」\n学習者が言ったこと：「${userText}」\n\n簡潔なフィードバックを日本語で（3行以内）：\n・意味は通じているか\n・お手本との主な違い（あれば）\n・一言アドバイス`
+        }]
+      })
+    });
+    const data = await res.json();
+    document.getElementById('drillFeedback').textContent = data.content[0].text;
+  } catch(e) {
+    document.getElementById('drillFeedback').textContent = '⚠️ フィードバック取得エラー';
+  }
+}
+
+function playDrillModel() {
+  const text = document.getElementById('drillModelThai').textContent;
+  if (text && text !== '–') playAudioTTS(text);
+}
+
+// ---- 会議シミュレーション ----
+function startSim(scene) {
+  currentSimScene = scene;
+  simHistory = [];
+  const opener = simOpeners[scene];
+  const convEl = document.getElementById('simConversation');
+  convEl.innerHTML = '';
+  // シーン開始メッセージ
+  addSimMessage('staff', opener.thai, opener.jp, opener.name);
+  simHistory.push({ role: 'assistant', content: opener.thai + '（' + opener.jp + '）' });
+  document.getElementById('simRecordBtn').disabled = false;
+  document.getElementById('simRecordStatus').textContent = 'ボタンを押してタイ語で話す';
+  // TTS
+  playAudioTTS(opener.thai);
+}
+
+function addSimMessage(role, thai, jp, name) {
+  const convEl = document.getElementById('simConversation');
+  const isUser = role === 'user';
+  const div = document.createElement('div');
+  div.style.cssText = `display:flex; flex-direction:column; gap:4px; align-items:${isUser ? 'flex-end' : 'flex-start'};`;
+  div.innerHTML = `
+    <div style="font-size:0.7rem; color:var(--muted);">${isUser ? '🙋 あなた' : '🤝 ' + (name || 'スタッフ')}</div>
+    <div style="background:${isUser ? 'var(--accent)' : 'var(--surface2)'}; color:${isUser ? '#fff' : 'var(--text)'}; border-radius:12px; padding:10px 14px; max-width:85%;">
+      <div style="font-family:'Sarabun',sans-serif; font-size:1rem; color:${isUser ? '#fff' : 'var(--thai)'};">${thai}</div>
+      ${jp ? `<div style="font-size:0.75rem; color:${isUser ? 'rgba(255,255,255,0.8)' : 'var(--muted)'}; margin-top:4px;">${jp}</div>` : ''}
+    </div>`;
+  convEl.appendChild(div);
+  convEl.scrollTop = convEl.scrollHeight;
+}
+
+async function toggleSimRecord() {
+  if (!getOpenAIKey()) {
+    document.getElementById('simRecordStatus').textContent = '⚠️ 設定画面でOpenAI APIキーを入力してください';
+    return;
+  }
+  if (!isRecording) {
+    try {
+      const btn = document.getElementById('simRecordBtn');
+      btn.textContent = '⏹';
+      btn.style.borderColor = 'var(--green)';
+      document.getElementById('simRecordStatus').textContent = '録音中... もう一度押すと停止';
+      await startMediaRecorder(async (blob) => {
+        document.getElementById('simRecordStatus').textContent = '認識中...';
+        try {
+          const text = await sendToWhisper(blob);
+          if (!text) throw new Error('音声を認識できませんでした');
+          addSimMessage('user', text, '', '');
+          simHistory.push({ role: 'user', content: text });
+          document.getElementById('simRecordStatus').textContent = 'スタッフが返答中...';
+          await getSimResponse(text);
+        } catch(e) {
+          document.getElementById('simRecordStatus').textContent = '⚠️ ' + e.message;
+        }
+        resetRecordBtn('simRecordBtn', 'simRecordStatus', 'ボタンを押してタイ語で話す');
+      });
+    } catch(e) {
+      document.getElementById('simRecordStatus').textContent = '⚠️ マイクが使えません';
+      isRecording = false;
+    }
+  } else {
+    stopMediaRecorder();
+    document.getElementById('simRecordStatus').textContent = '処理中...';
+  }
+}
+
+async function getSimResponse(userText) {
+  const claudeKey = getClaudeKey();
+  const opener = simOpeners[currentSimScene];
+  if (!claudeKey) {
+    addSimMessage('staff', '（Claude APIキーを設定してください）', '', opener.name);
+    return;
+  }
+  try {
+    const sysPrompt = simSystemPrompts[currentSimScene];
+    const messages = simHistory.map(h => ({ role: h.role, content: h.content }));
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': claudeKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 150,
+        system: sysPrompt,
+        messages
+      })
+    });
+    const data = await res.json();
+    const reply = data.content[0].text;
+    // [タイ語]（日本語訳）のパース
+    const match = reply.match(/^(.+?)（(.+?)）/s);
+    const thaiPart = match ? match[1].trim() : reply;
+    const jpPart = match ? match[2].trim() : '';
+    addSimMessage('staff', thaiPart, jpPart, opener.name);
+    simHistory.push({ role: 'assistant', content: reply });
+    playAudioTTS(thaiPart);
+  } catch(e) {
+    addSimMessage('staff', '⚠️ エラーが発生しました', e.message, opener.name);
+  }
+}
+
+function resetSim() {
+  currentSimScene = null;
+  simHistory = [];
+  document.getElementById('simConversation').innerHTML = '<div style="text-align:center; color:var(--muted); font-size:0.85rem; padding:20px 0;">上のシーンを選ぶと会話が始まります</div>';
+  document.getElementById('simRecordBtn').disabled = true;
+  resetRecordBtn('simRecordBtn', 'simRecordStatus', 'シーンを選んでください');
+}
+
+// ドリル初期化
+document.addEventListener('DOMContentLoaded', function() {
+  drillList = shuffle([...drillScenarios]);
+  renderDrillCard();
+});
+
 // ---- Expose all functions to global scope for onclick handlers ----
 // Must be at the very end so overridden versions are registered
 Object.assign(window, {
@@ -1426,5 +1775,11 @@ Object.assign(window, {
   startListeningQuiz, renderHomeScreen,
   setBusinessMode, selectRoleplay, nextRoleplay, prevRoleplay,
   showCarTemplate, copyCarText, renderCarCategories,
-  showEmailTemplate, copyEmailText, renderEmailCategories
+  showEmailTemplate, copyEmailText, renderEmailCategories,
+  // Phase 3
+  switchDrillMode, setDrillScene, nextDrill, prevDrill,
+  toggleDrillRecord, playDrillModel,
+  startSim, toggleSimRecord, resetSim,
+  // Phase 2
+  saveApiKey, showApiKeys, clearApiKeys
 });

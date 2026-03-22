@@ -43,6 +43,7 @@
   <button class="tab" onclick="switchTab('vocab')">🃏 単語カード</button>
   <button class="tab" onclick="switchTab('grammar')">📖 文法ポイント</button>
   <button class="tab" onclick="switchTab('business')">🏭 実務</button>
+  <button class="tab" onclick="switchTab('drill')">🎤 ドリル</button>
   <button class="tab" onclick="switchTab('settings')">⚙️ 設定</button>
 </div>
 
@@ -327,6 +328,97 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- DRILL: 指示出しドリル＋会議シミュレーション -->
+<div class="section" id="drill">
+  <p class="section-title">🎤 スピーキングドリル</p>
+
+  <!-- モード選択 -->
+  <div class="mode-btns" style="margin-bottom:16px;">
+    <button class="mode-btn active" id="drillModeBtn" onclick="switchDrillMode('drill', this)">📢 指示出しドリル</button>
+    <button class="mode-btn" id="simModeBtn" onclick="switchDrillMode('sim', this)">🤝 会議シミュレーション</button>
+  </div>
+
+  <!-- ===== 指示出しドリル ===== -->
+  <div id="drillPanel">
+    <!-- シーン選択 -->
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+      <button class="filter-btn scene-btn active" onclick="setDrillScene('all', this)">全て</button>
+      <button class="filter-btn scene-btn" onclick="setDrillScene('morning', this)">☀️ 朝礼</button>
+      <button class="filter-btn scene-btn" onclick="setDrillScene('defect', this)">⚠️ 不良対応</button>
+      <button class="filter-btn scene-btn" onclick="setDrillScene('instruction', this)">📢 作業指示</button>
+      <button class="filter-btn scene-btn" onclick="setDrillScene('safety', this)">⛑ 安全</button>
+    </div>
+
+    <!-- お題カード -->
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px 20px 16px; text-align:center; margin-bottom:16px;">
+      <div style="font-size:0.75rem; color:var(--muted); margin-bottom:8px;">📋 日本語でこう言ってください</div>
+      <div id="drillPromptJP" style="font-size:1.2rem; color:var(--text); font-weight:600; line-height:1.5; min-height:2em;">ロード中...</div>
+      <div id="drillSceneTag" style="font-size:0.75rem; color:var(--accent); margin-top:8px;"></div>
+    </div>
+
+    <!-- 録音ボタン -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:12px; margin-bottom:16px;">
+      <button id="drillRecordBtn" onclick="toggleDrillRecord()" style="width:80px; height:80px; border-radius:50%; border:3px solid var(--red); background:var(--surface2); font-size:2rem; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center;">🎙</button>
+      <div id="drillRecordStatus" style="font-size:0.82rem; color:var(--muted);">ボタンを押してタイ語で話す</div>
+    </div>
+
+    <!-- 結果エリア -->
+    <div id="drillResultArea" style="display:none; display:flex; flex-direction:column; gap:12px;">
+      <!-- Whisper結果 -->
+      <div style="background:var(--surface2); border-radius:12px; padding:14px;">
+        <div style="font-size:0.72rem; color:var(--muted); margin-bottom:6px;">🎧 あなたが言ったこと（Whisper認識）</div>
+        <div id="drillUserText" style="font-size:1rem; color:var(--thai); font-family:'Sarabun', sans-serif;">–</div>
+      </div>
+      <!-- Claudeフィードバック -->
+      <div style="background:var(--surface2); border:1px solid var(--accent2); border-radius:12px; padding:14px;">
+        <div style="font-size:0.72rem; color:var(--accent2); margin-bottom:6px;">🤖 Claudeのフィードバック</div>
+        <div id="drillFeedback" style="font-size:0.84rem; color:var(--text-dim); line-height:1.7; white-space:pre-wrap;">–</div>
+      </div>
+      <!-- お手本 -->
+      <div style="background:var(--surface2); border:1px solid var(--green); border-radius:12px; padding:14px;">
+        <div style="font-size:0.72rem; color:var(--green); margin-bottom:6px;">✅ お手本</div>
+        <div id="drillModelThai" style="font-size:1.1rem; color:var(--thai); font-family:'Sarabun', sans-serif; margin-bottom:4px;">–</div>
+        <div id="drillModelRomaji" style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;">–</div>
+        <div id="drillModelJP" style="font-size:0.85rem; color:var(--text-dim);">–</div>
+        <button onclick="playDrillModel()" style="margin-top:10px; background:var(--surface3); border:1px solid var(--border); border-radius:8px; padding:8px 16px; color:var(--text); cursor:pointer; font-size:0.82rem;">🔊 お手本を聞く</button>
+      </div>
+    </div>
+
+    <!-- ナビゲーション -->
+    <div style="display:flex; gap:10px; margin-top:16px; justify-content:center;">
+      <button onclick="prevDrill()" style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px 20px; color:var(--text); cursor:pointer;">← 前</button>
+      <button onclick="nextDrill()" style="background:var(--accent); border:none; border-radius:10px; padding:10px 20px; color:#fff; cursor:pointer; font-weight:600;">次へ →</button>
+    </div>
+    <div id="drillCounter" style="text-align:center; font-size:0.8rem; color:var(--muted); margin-top:8px;">1 / 20</div>
+  </div>
+
+  <!-- ===== 会議シミュレーション ===== -->
+  <div id="simPanel" style="display:none;">
+    <!-- シーン選択 -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:0.82rem; color:var(--muted); margin-bottom:8px;">シーンを選んでください</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="filter-btn" onclick="startSim('morning')">☀️ 朝礼</button>
+        <button class="filter-btn" onclick="startSim('defect')">⚠️ 不良報告</button>
+        <button class="filter-btn" onclick="startSim('delivery')">📦 納期確認</button>
+        <button class="filter-btn" onclick="startSim('safety')">⛑ 安全指示</button>
+      </div>
+    </div>
+
+    <!-- 会話エリア -->
+    <div id="simConversation" style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; min-height:180px; max-height:360px; overflow-y:auto; margin-bottom:12px; display:flex; flex-direction:column; gap:12px;">
+      <div style="text-align:center; color:var(--muted); font-size:0.85rem; padding:20px 0;">上のシーンを選ぶと会話が始まります</div>
+    </div>
+
+    <!-- 録音ボタン -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+      <button id="simRecordBtn" onclick="toggleSimRecord()" style="width:72px; height:72px; border-radius:50%; border:3px solid var(--red); background:var(--surface2); font-size:1.8rem; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center;" disabled>🎙</button>
+      <div id="simRecordStatus" style="font-size:0.82rem; color:var(--muted);">シーンを選んでください</div>
+      <button onclick="resetSim()" style="background:transparent; border:1px solid var(--border); border-radius:8px; padding:7px 14px; color:var(--muted); cursor:pointer; font-size:0.78rem;">🔄 リセット</button>
+    </div>
   </div>
 </div>
 
