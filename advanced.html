@@ -43,6 +43,7 @@
   <button class="tab" onclick="switchTab('vocab')">🃏 単語カード</button>
   <button class="tab" onclick="switchTab('grammar')">📖 文法ポイント</button>
   <button class="tab" onclick="switchTab('drill')">🎤 ドリル</button>
+  <button class="tab" onclick="switchTab('aigen')">✨ AI生成</button>
   <button class="tab" onclick="switchTab('settings')">⚙️ 設定</button>
 </div>
 
@@ -153,6 +154,7 @@
       <button class="cat-btn" onclick="setCategory('quality', this)">🔍 品質</button>
       <button class="cat-btn" onclick="setCategory('daily', this)">☀️ 日常</button>
       <button class="cat-btn" onclick="setCategory('polite', this)">🙏 敬語</button>
+      <button class="cat-btn" onclick="setCategory('custom', this)">⭐ マイ単語</button>
     </div>
 
     <!-- FILTER ROW -->
@@ -284,6 +286,34 @@
   </div>
 </div>
 
+
+<!-- AI PHRASE GENERATOR -->
+<div class="section" id="aigen">
+  <p class="section-title">✨ AI フレーズ生成</p>
+
+  <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:12px;">
+    <div style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;">
+      💡 どんな場面でタイ語を使いたいか、日本語で入力してください
+    </div>
+    <textarea id="aigenInput"
+      placeholder="例：品質不良を部下に指摘したい&#10;納期の遅れを上司に報告したい&#10;今日の作業手順を説明したい"
+      style="width:100%; background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:12px; color:var(--text); font-size:0.9rem; min-height:80px; resize:vertical; font-family:'Noto Sans JP',sans-serif; box-sizing:border-box;"></textarea>
+    <button onclick="generatePhrases()" id="aigenBtn"
+      style="width:100%; margin-top:10px; background:var(--accent); color:#fff; border:none; border-radius:12px; padding:14px; cursor:pointer; font-size:0.95rem; font-weight:600;">
+      ✨ タイ語フレーズを生成する
+    </button>
+  </div>
+
+  <div id="aigenStatus" style="display:none; text-align:center; font-size:0.82rem; color:var(--muted); margin:8px 0;"></div>
+
+  <div id="aigenResult" style="display:none; flex-direction:column; gap:12px;"></div>
+
+  <div style="background:var(--surface2); border-radius:12px; padding:12px 14px; margin-top:16px;">
+    <div style="font-size:0.75rem; color:var(--muted); margin-bottom:6px;">⭐ 保存済みマイ単語</div>
+    <div id="aigenSavedCount" style="font-size:0.88rem; color:var(--text-dim);">0 件</div>
+    <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">単語カードタブ → マイ単語 で復習できます</div>
+  </div>
+</div>
 
 <!-- SETTINGS -->
 <div class="section" id="settings">

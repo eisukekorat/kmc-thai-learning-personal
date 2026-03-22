@@ -251,6 +251,7 @@ function switchTab(tab, fromCode) {
     });
   }
   if (tab === 'home') renderHomeScreen();
+  if (tab === 'aigen') updateAigenSavedCount();
 }
 
 function updateProgress() {
@@ -401,11 +402,18 @@ function setCategory(cat, btn) {
   startCards();
 }
 
+function getBaseVocab(category) {
+  if (category === 'custom') return getCustomVocab();
+  if (category === 'focus') return Object.values(vocabData).flat();
+  return (vocabData[category] || []).slice(0, 50);
+}
+
 function getVocabList() {
-  let allVocab = vocabData[currentCategory].slice(0, 50);
+  const baseVocab = getBaseVocab(currentCategory);
+  let allVocab = baseVocab;
   // 苦手フィルター
   if (freqFilter === 'weak') {
-    const allV = vocabData[currentCategory].slice(0, 50);
+    const allV = baseVocab;
     allVocab = allVocab.filter(v => {
       const idx = allV.indexOf(v);
       return weakWords[currentCategory + '_' + idx];
@@ -419,7 +427,7 @@ function getVocabList() {
   }
   if (vocabMode === 'learn') {
     return allVocab.filter((v) => {
-      const origIdx = vocabData[currentCategory].slice(0, 50).indexOf(v);
+      const origIdx = baseVocab.indexOf(v);
       return !progress.vocabLearned[currentCategory + '_' + origIdx];
     });
   }
@@ -475,7 +483,7 @@ function showCard() {
   }
 
   const c = currentCards[cardIndex];
-  const allVocab = vocabData[currentCategory].slice(0, 50);
+  const allVocab = getBaseVocab(currentCategory);
   const realIndex = allVocab.indexOf(c);
 
   document.getElementById('fcThai').textContent = c.thai;
@@ -517,7 +525,7 @@ function nextCard(rating) {
   if (rating === false) rating = 'unknown';
 
   const c = currentCards[cardIndex];
-  const allVocab = vocabData[currentCategory].slice(0, 50);
+  const allVocab = getBaseVocab(currentCategory);
   const realIndex = allVocab.indexOf(c);
 
   // Claudeヒントエリアをリセット
@@ -1590,10 +1598,153 @@ function startFocusDrill() {
   currentCategory = 'focus';
 
   // 単語カードタブに切り替えてカード表示
-  switchTab('vocab');
-  document.getElementById('vocabDrillArea').style.display = 'block';
-  document.getElementById('homeScreen').style.display = 'none';
+  switchTab('vocab', true);
   showCard();
+}
+
+// ---- Phase 6: AI フレーズ生成 + マイ単語保存 ----
+
+function getCustomVocab() {
+  return JSON.parse(localStorage.getItem('customVocab_v1') || '[]');
+}
+
+function updateAigenSavedCount() {
+  const el = document.getElementById('aigenSavedCount');
+  if (el) el.textContent = getCustomVocab().length + ' 件';
+}
+
+async function generatePhrases() {
+  const key = getClaudeKey();
+  if (!key) {
+    alert('Claude APIキーを設定してください（⚙️設定タブ）');
+    return;
+  }
+  const input = document.getElementById('aigenInput').value.trim();
+  if (!input) {
+    alert('場面を入力してください');
+    return;
+  }
+
+  const btn = document.getElementById('aigenBtn');
+  const statusEl = document.getElementById('aigenStatus');
+  const resultEl = document.getElementById('aigenResult');
+
+  btn.disabled = true;
+  btn.textContent = '生成中...';
+  statusEl.style.display = 'block';
+  statusEl.textContent = '🤖 Claudeがフレーズを考えています...';
+  resultEl.style.display = 'none';
+  resultEl.innerHTML = '';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 700,
+        messages: [{
+          role: 'user',
+          content: `あなたはタイ語の専門家です。製造業の日本人管理職がタイ人スタッフに話しかける場面です。
+場面：「${input}」
+この場面で使えるタイ語フレーズを3パターン、以下のJSON形式のみで返してください（余分なテキスト不要）：
+{
+  "polite": { "thai": "...", "romaji": "...", "jp": "...", "note": "..." },
+  "normal": { "thai": "...", "romaji": "...", "jp": "...", "note": "..." },
+  "casual": { "thai": "...", "romaji": "...", "jp": "...", "note": "..." }
+}
+- polite: ครับ/ค่ะを使った丁寧表現（初対面・目上向け）
+- normal: 普通の表現（普段の指示・報告）
+- casual: くだけた表現（気心知れた部下向け）
+- noteには使い方ひとことメモ（日本語・1行）`
+        }]
+      })
+    });
+    const data = await res.json();
+    const rawText = data.content[0].text;
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('レスポンスのフォーマットが不正です');
+    const phrases = JSON.parse(jsonMatch[0]);
+    renderGeneratedCards(phrases, input);
+    statusEl.style.display = 'none';
+    resultEl.style.display = 'flex';
+  } catch(e) {
+    statusEl.textContent = '⚠️ エラー: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ タイ語フレーズを生成する';
+  }
+}
+
+function renderGeneratedCards(phrases, scene) {
+  const resultEl = document.getElementById('aigenResult');
+  resultEl.innerHTML = '';
+
+  const levels = [
+    { key: 'polite', label: '🙏 丁寧', color: 'var(--accent)' },
+    { key: 'normal', label: '💬 普通', color: 'var(--green)' },
+    { key: 'casual', label: '😄 カジュアル', color: 'var(--accent2)' }
+  ];
+
+  levels.forEach(({ key, label, color }) => {
+    const p = phrases[key];
+    if (!p) return;
+
+    const card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; display:flex; flex-direction:column; gap:8px;';
+
+    const ttsId = 'aigen_' + key + '_tts';
+    const saveId = 'aigen_' + key + '_save';
+
+    card.innerHTML = `
+      <div style="font-size:0.72rem; color:${color}; font-weight:600; letter-spacing:0.05em;">${label}</div>
+      <div style="font-size:1.35rem; color:var(--text); font-family:'Sarabun',sans-serif; line-height:1.5;">${p.thai}</div>
+      <div style="font-size:0.8rem; color:var(--muted); font-family:'IBM Plex Mono',monospace;">${p.romaji}</div>
+      <div style="font-size:0.88rem; color:var(--text-dim);">${p.jp}</div>
+      <div style="font-size:0.75rem; color:var(--accent2); background:var(--surface2); border-radius:6px; padding:6px 8px;">💡 ${p.note}</div>
+      <div style="display:flex; gap:8px; margin-top:4px;">
+        <button id="${ttsId}" style="flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 8px; cursor:pointer; color:var(--text-dim); font-size:0.82rem;">🔊 発音を聞く</button>
+        <button id="${saveId}" style="flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 8px; cursor:pointer; color:var(--text-dim); font-size:0.82rem;">💾 カードに保存</button>
+      </div>
+    `;
+    resultEl.appendChild(card);
+
+    document.getElementById(ttsId).addEventListener('click', () => {
+      playAudioTTS(p.thai, ttsId);
+    });
+
+    document.getElementById(saveId).addEventListener('click', function() {
+      const cardData = {
+        thai: p.thai,
+        romaji: p.romaji,
+        jp: p.jp,
+        example: scene + ' → ' + p.jp,
+        frequency: 'high',
+        scenes: ['生成']
+      };
+      saveGeneratedCard(cardData, this);
+    });
+  });
+}
+
+function saveGeneratedCard(card, btn) {
+  const cards = getCustomVocab();
+  if (cards.some(c => c.thai === card.thai)) {
+    btn.textContent = '✅ 保存済み';
+    btn.disabled = true;
+    return;
+  }
+  cards.push({ ...card, ts: Date.now() });
+  localStorage.setItem('customVocab_v1', JSON.stringify(cards));
+  btn.textContent = '✅ 保存しました';
+  btn.style.color = 'var(--green)';
+  btn.disabled = true;
+  updateAigenSavedCount();
 }
 
 // ---- 会議シミュレーション ----
@@ -1729,6 +1880,8 @@ Object.assign(window, {
   submitGrammarDrill, nextGrammarDrill, playGrammarModel, toggleGrammarVoice,
   // Phase 5
   analyzeWeakness, startFocusDrill,
+  // Phase 6
+  generatePhrases,
   // Phase 3
   switchDrillMode, setDrillScene, nextDrill, prevDrill,
   toggleDrillRecord, playDrillModel,
