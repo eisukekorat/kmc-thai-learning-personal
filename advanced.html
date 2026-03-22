@@ -42,7 +42,6 @@
   <button class="tab" onclick="switchTab('phrases')">💬 職場フレーズ</button>
   <button class="tab" onclick="switchTab('vocab')">🃏 単語カード</button>
   <button class="tab" onclick="switchTab('grammar')">📖 文法ポイント</button>
-  <button class="tab" onclick="switchTab('business')">🏭 実務</button>
   <button class="tab" onclick="switchTab('drill')">🎤 ドリル</button>
   <button class="tab" onclick="switchTab('settings')">⚙️ 設定</button>
 </div>
@@ -127,8 +126,6 @@
   <div class="mode-switcher">
     <button class="mode-btn active" onclick="setVocabMode('learn')">📚 学習モード</button>
     <button class="mode-btn" onclick="setVocabMode('review')">🔄 復習モード</button>
-    <button class="mode-btn" onclick="setVocabMode('quiz')">🧠 クイズ</button>
-    <button class="mode-btn" onclick="setVocabMode('listening')">🎧 リスニング</button>
   </div>
 
   <div class="flashcard-area">
@@ -186,41 +183,6 @@
       <div id="claudeTipText" style="font-size:0.84rem; color:var(--text-dim); line-height:1.7; white-space:pre-wrap;"></div>
     </div>
 
-    <!-- QUIZ MODE AREA -->
-    <div id="quizArea" style="display:none; width:100%; max-width:440px; flex-direction:column; align-items:center; gap:16px;">
-      <div class="flashcard" style="cursor:default;" id="quizCard">
-        <div class="thai-word" id="quizThai">–</div>
-        <div class="romanji" id="quizRomaji">–</div>
-      </div>
-      <div class="card-counter" id="quizCounter">1 / 10</div>
-      <div class="quiz-choices" id="quizChoices"></div>
-      <div id="quizNextBtn" style="display:none">
-        <button class="fc-btn good" onclick="quizNext()">次へ →</button>
-      </div>
-      <div id="quizScoreArea" style="display:none; text-align:center; gap:12px; flex-direction:column; align-items:center;">
-        <div class="quiz-score" id="quizScoreText"></div>
-        <button class="fc-btn skip" onclick="startCards()">もう一度</button>
-        <button class="fc-btn again" id="retryWrongBtn" onclick="retryWrongAnswers()" style="display:none">⚠️ 間違えた問題だけ復習</button>
-      </div>
-    </div>
-
-    <!-- LISTENING MODE AREA -->
-    <div id="listeningArea" style="display:none; width:100%; max-width:440px; flex-direction:column; align-items:center; gap:16px;">
-      <div class="flashcard" style="cursor:default;" id="listeningCard">
-        <div class="listening-icon">🎧</div>
-        <div style="font-size:0.9rem; color:var(--muted);">音声を聞いて意味を選んでください</div>
-        <button class="listening-play-btn" onclick="playListeningAudio()">🔊 もう一度聞く</button>
-      </div>
-      <div class="card-counter" id="listeningCounter">1 / 10</div>
-      <div class="quiz-choices" id="listeningChoices"></div>
-      <div id="listeningNextBtn" style="display:none">
-        <button class="fc-btn good" onclick="listeningNext()">次へ →</button>
-      </div>
-      <div id="listeningScoreArea" style="display:none; text-align:center; gap:12px; flex-direction:column; align-items:center;">
-        <div class="quiz-score" id="listeningScoreText"></div>
-        <button class="fc-btn skip" onclick="startCards()">もう一度</button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -231,43 +193,6 @@
   </div>
 </div>
 
-<!-- BUSINESS (KMC実務) -->
-<div class="section" id="business">
-  <p class="section-title">🏭 KMC実務タイ語</p>
-
-  <div class="mode-switcher">
-    <button class="mode-btn active" onclick="setBusinessMode('roleplay')">🎭 ロールプレイ</button>
-    <button class="mode-btn" onclick="setBusinessMode('car')">📋 CAR報告書</button>
-    <button class="mode-btn" onclick="setBusinessMode('email')">✉️ メール例文</button>
-  </div>
-
-  <!-- ロールプレイ -->
-  <div id="roleplayArea" class="business-area">
-    <div class="category-select" id="roleplayScenes"></div>
-    <div class="roleplay-card" id="roleplayCard">
-      <div class="roleplay-scene-title" id="roleplayTitle">--</div>
-      <div class="roleplay-dialogue" id="roleplayDialogue"></div>
-      <div class="roleplay-vocab" id="roleplayVocab"></div>
-    </div>
-    <div class="card-counter" id="roleplayCounter">1 / 1</div>
-    <div class="fc-buttons">
-      <button class="fc-btn skip" onclick="prevRoleplay()">← 前</button>
-      <button class="fc-btn good" onclick="nextRoleplay()">次 →</button>
-    </div>
-  </div>
-
-  <!-- CAR報告書 -->
-  <div id="carArea" class="business-area" style="display:none">
-    <div class="category-select" id="carCategories"></div>
-    <div class="car-template" id="carTemplate"></div>
-  </div>
-
-  <!-- メール例文 -->
-  <div id="emailArea" class="business-area" style="display:none">
-    <div class="category-select" id="emailCategories"></div>
-    <div class="email-template" id="emailTemplate"></div>
-  </div>
-</div>
 
 <!-- SETTINGS -->
 <div class="section" id="settings">

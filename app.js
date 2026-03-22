@@ -448,29 +448,15 @@ function shuffle(arr) {
 
 function startCards() {
   const list = getVocabList();
-  currentCards = (vocabMode === 'learn' || vocabMode === 'quiz') ? shuffle(list) : list;
+  currentCards = (vocabMode === 'learn') ? shuffle(list) : list;
   cardIndex = 0;
   revealed = false;
   document.getElementById('fcButtons').style.display = 'none';
   document.getElementById('fcNext').style.display = 'none';
 
-  // クイズモードの切り替え
   const flashcard = document.getElementById('flashcard');
-  const quizArea = document.getElementById('quizArea');
-  if (vocabMode === 'quiz') {
-    flashcard.style.display = 'none';
-    document.getElementById('tapHint').style.display = 'none';
-    quizArea.style.display = 'flex';
-    quizCorrect = 0;
-    quizTotal = 0;
-    document.getElementById('quizScoreArea').style.display = 'none';
-    document.getElementById('quizNextBtn').style.display = 'none';
-    showQuizCard();
-  } else {
-    flashcard.style.display = '';
-    quizArea.style.display = 'none';
-    showCard();
-  }
+  if (flashcard) flashcard.style.display = '';
+  showCard();
 }
 
 function showCard() {
@@ -567,80 +553,6 @@ function nextCard(rating) {
   revealed = false;
   document.getElementById('fcButtons').style.display = 'none';
   showCard();
-}
-
-// ---- Quiz ----
-let quizCorrect = 0;
-let quizTotal = 0;
-
-function showQuizCard() {
-  if (currentCards.length === 0 || cardIndex >= currentCards.length) {
-    document.getElementById('quizCard').style.display = 'none';
-    document.getElementById('quizChoices').innerHTML = '';
-    document.getElementById('quizCounter').textContent = '完了';
-    document.getElementById('quizNextBtn').style.display = 'none';
-    const scoreArea = document.getElementById('quizScoreArea');
-    scoreArea.style.display = 'flex';
-    document.getElementById('quizScoreText').textContent =
-      '結果：' + quizCorrect + ' / ' + quizTotal + ' 正解';
-    return;
-  }
-  const c = currentCards[cardIndex];
-  document.getElementById('quizThai').textContent = c.thai;
-  document.getElementById('quizRomaji').textContent = c.romaji;
-  document.getElementById('quizCounter').textContent = (cardIndex + 1) + ' / ' + currentCards.length;
-  document.getElementById('quizNextBtn').style.display = 'none';
-  document.getElementById('quizCard').style.display = '';
-
-  // 選択肢を作る（正解1 + ランダム3）
-  const allVocab = vocabData[currentCategory].slice(0, 50);
-  const wrongPool = shuffle(allVocab.filter(v => v !== c));
-  const choices = shuffle([c, ...wrongPool.slice(0, 3)]);
-
-  const container = document.getElementById('quizChoices');
-  container.innerHTML = '';
-  choices.forEach(choice => {
-    const btn = document.createElement('button');
-    btn.className = 'quiz-choice';
-    btn.textContent = choice.jp;
-    btn.onclick = function() { selectQuizChoice(this, choice === c); };
-    container.appendChild(btn);
-  });
-}
-
-function selectQuizChoice(btn, isCorrect) {
-  document.querySelectorAll('.quiz-choice').forEach(b => {
-    b.disabled = true;
-    if (b === btn) {
-      b.classList.add(isCorrect ? 'correct' : 'wrong');
-    }
-  });
-  // 正解ボタンを緑にする
-  const allChoices = document.querySelectorAll('.quiz-choice');
-  const correctCard = currentCards[cardIndex];
-  allChoices.forEach(b => {
-    if (b.textContent === correctCard.jp) b.classList.add('correct');
-  });
-
-  quizTotal++;
-  if (isCorrect) {
-    quizCorrect++;
-    const allVocab = vocabData[currentCategory].slice(0, 50);
-    const realIndex = allVocab.indexOf(currentCards[cardIndex]);
-    delete weakWords[currentCategory + '_' + realIndex];
-    saveWeakWords();
-  } else {
-    const allVocab = vocabData[currentCategory].slice(0, 50);
-    const realIndex = allVocab.indexOf(currentCards[cardIndex]);
-    weakWords[currentCategory + '_' + realIndex] = true;
-    saveWeakWords();
-  }
-  document.getElementById('quizNextBtn').style.display = 'block';
-}
-
-function quizNext() {
-  cardIndex++;
-  showQuizCard();
 }
 
 // ---- SRS ----
@@ -955,7 +867,7 @@ if ('serviceWorker' in navigator) {
     const activeSection = document.querySelector('.section.active');
     if (!activeSection) return null;
     if (activeSection.id === 'phrases') return document.getElementById('phraseCard');
-    if (activeSection.id === 'vocab' && vocabMode !== 'quiz') return document.getElementById('flashcard');
+    if (activeSection.id === 'vocab') return document.getElementById('flashcard');
     return null;
   }
 
@@ -992,7 +904,7 @@ if ('serviceWorker' in navigator) {
     if (activeSection.id === 'phrases') {
       if (dx > 0) prevPhrase();
       else nextPhrase();
-    } else if (activeSection.id === 'vocab' && vocabMode !== 'quiz') {
+    } else if (activeSection.id === 'vocab') {
       if (revealed) {
         if (dx > 0) nextCard(true);  // swipe right = knew
         else nextCard(false);         // swipe left = again
@@ -1012,7 +924,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft') prevPhrase();
     else if (e.key === 'ArrowRight') nextPhrase();
     else if (e.key === ' ') { e.preventDefault(); playAudio('phrase'); }
-  } else if (activeSection.id === 'vocab' && vocabMode !== 'quiz') {
+  } else if (activeSection.id === 'vocab') {
     if (e.key === ' ') { e.preventDefault(); if (!revealed) showMeaning(); }
     else if (e.key === 'ArrowRight' && revealed) nextCard(true);
     else if (e.key === 'ArrowLeft' && revealed) nextCard(false);
@@ -1067,157 +979,6 @@ markPhrase = function(learned) {
   _origMarkPhrase(learned);
 };
 
-// ================================
-// PHASE 3: LEARNING ENHANCEMENTS
-// ================================
-
-// ---- Listening Quiz ----
-let listeningCorrect = 0, listeningTotal = 0;
-
-function startListeningQuiz() {
-  const flashcard = document.getElementById('flashcard');
-  const quizArea = document.getElementById('quizArea');
-  const listeningArea = document.getElementById('listeningArea');
-  flashcard.style.display = 'none';
-  quizArea.style.display = 'none';
-  listeningArea.style.display = 'flex';
-  document.getElementById('tapHint').style.display = 'none';
-  listeningCorrect = 0;
-  listeningTotal = 0;
-  document.getElementById('listeningScoreArea').style.display = 'none';
-  document.getElementById('listeningNextBtn').style.display = 'none';
-  showListeningCard();
-}
-
-function playListeningAudio() {
-  if (currentCards.length === 0 || cardIndex >= currentCards.length) return;
-  const c = currentCards[cardIndex];
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(c.thai);
-    u.lang = 'th-TH';
-    u.rate = speechRate;
-    window.speechSynthesis.speak(u);
-  }
-}
-
-function showListeningCard() {
-  if (currentCards.length === 0 || cardIndex >= currentCards.length) {
-    document.getElementById('listeningCard').style.display = 'none';
-    document.getElementById('listeningChoices').innerHTML = '';
-    document.getElementById('listeningCounter').textContent = '完了';
-    document.getElementById('listeningNextBtn').style.display = 'none';
-    const scoreArea = document.getElementById('listeningScoreArea');
-    scoreArea.style.display = 'flex';
-    document.getElementById('listeningScoreText').textContent =
-      '結果：' + listeningCorrect + ' / ' + listeningTotal + ' 正解';
-    return;
-  }
-
-  document.getElementById('listeningCard').style.display = '';
-  document.getElementById('listeningCounter').textContent = (cardIndex + 1) + ' / ' + currentCards.length;
-  document.getElementById('listeningNextBtn').style.display = 'none';
-
-  // Auto play audio
-  setTimeout(() => playListeningAudio(), 400);
-
-  // Create choices
-  const c = currentCards[cardIndex];
-  const allVocab = vocabData[currentCategory].slice(0, 50);
-  const wrongPool = shuffle(allVocab.filter(v => v !== c));
-  const choices = shuffle([c, ...wrongPool.slice(0, 3)]);
-
-  const container = document.getElementById('listeningChoices');
-  container.innerHTML = '';
-  choices.forEach(choice => {
-    const btn = document.createElement('button');
-    btn.className = 'quiz-choice';
-    btn.textContent = choice.jp;
-    btn.onclick = function() { selectListeningChoice(this, choice === c); };
-    container.appendChild(btn);
-  });
-}
-
-function selectListeningChoice(btn, isCorrect) {
-  document.querySelectorAll('#listeningChoices .quiz-choice').forEach(b => {
-    b.disabled = true;
-    if (b === btn) b.classList.add(isCorrect ? 'correct' : 'wrong');
-  });
-  const correctCard = currentCards[cardIndex];
-  document.querySelectorAll('#listeningChoices .quiz-choice').forEach(b => {
-    if (b.textContent === correctCard.jp) b.classList.add('correct');
-  });
-  listeningTotal++;
-  if (isCorrect) listeningCorrect++;
-  document.getElementById('listeningNextBtn').style.display = 'block';
-}
-
-function listeningNext() {
-  cardIndex++;
-  showListeningCard();
-}
-
-// Update startCards to handle listening mode
-const _origStartCards = startCards;
-startCards = function() {
-  const listeningArea = document.getElementById('listeningArea');
-  if (listeningArea) listeningArea.style.display = 'none';
-
-  if (vocabMode === 'listening') {
-    const list = getVocabList();
-    currentCards = shuffle(list);
-    cardIndex = 0;
-    revealed = false;
-    document.getElementById('fcButtons').style.display = 'none';
-    document.getElementById('fcNext').style.display = 'none';
-    document.getElementById('flashcard').style.display = 'none';
-    document.getElementById('quizArea').style.display = 'none';
-    startListeningQuiz();
-  } else {
-    _origStartCards();
-  }
-};
-
-// ---- Auto-retry wrong answers ----
-let wrongAnswers = [];
-
-// Override selectQuizChoice to track wrong answers
-const _origSelectQuizChoice = selectQuizChoice;
-selectQuizChoice = function(btn, isCorrect) {
-  if (!isCorrect) {
-    wrongAnswers.push(currentCards[cardIndex]);
-  }
-  _origSelectQuizChoice(btn, isCorrect);
-};
-
-// Override quiz completion to show retry button
-const _origShowQuizCard = showQuizCard;
-showQuizCard = function() {
-  if (currentCards.length === 0 || cardIndex >= currentCards.length) {
-    _origShowQuizCard();
-    // Show retry button if there were wrong answers
-    const retryBtn = document.getElementById('retryWrongBtn');
-    if (retryBtn) {
-      retryBtn.style.display = wrongAnswers.length > 0 ? 'block' : 'none';
-    }
-    return;
-  }
-  _origShowQuizCard();
-};
-
-function retryWrongAnswers() {
-  if (wrongAnswers.length === 0) return;
-  currentCards = shuffle([...wrongAnswers]);
-  wrongAnswers = [];
-  cardIndex = 0;
-  quizCorrect = 0;
-  quizTotal = 0;
-  document.getElementById('quizScoreArea').style.display = 'none';
-  document.getElementById('quizNextBtn').style.display = 'none';
-  document.getElementById('quizCard').style.display = '';
-  showQuizCard();
-}
-
 // ---- Learning History (7-day chart) ----
 function recordDailyActivity() {
   const today = getTodayStr();
@@ -1264,155 +1025,6 @@ renderHomeScreen = function() {
   recordDailyActivity();
   renderLearningChart();
 };
-
-// ================================
-// PHASE 4: KMC BUSINESS FEATURES
-// ================================
-
-let currentRoleplayIndex = 0;
-let currentBusinessMode = 'roleplay';
-
-function setBusinessMode(mode) {
-  currentBusinessMode = mode;
-  const btns = document.querySelectorAll('#business .mode-btn');
-  btns.forEach(b => b.classList.remove('active'));
-  if (event && event.target) event.target.classList.add('active');
-  document.getElementById('roleplayArea').style.display = mode === 'roleplay' ? '' : 'none';
-  document.getElementById('carArea').style.display = mode === 'car' ? '' : 'none';
-  document.getElementById('emailArea').style.display = mode === 'email' ? '' : 'none';
-  if (mode === 'roleplay') renderRoleplayScenes();
-  if (mode === 'car') renderCarCategories();
-  if (mode === 'email') renderEmailCategories();
-}
-
-// ---- Roleplay ----
-function renderRoleplayScenes() {
-  const container = document.getElementById('roleplayScenes');
-  if (!container) return;
-  container.innerHTML = roleplayData.map((r, i) =>
-    `<button class="cat-btn${i === currentRoleplayIndex ? ' active' : ''}" onclick="selectRoleplay(${i}, this)">${r.scene}</button>`
-  ).join('');
-  showRoleplay();
-}
-
-function selectRoleplay(idx, btn) {
-  currentRoleplayIndex = idx;
-  document.querySelectorAll('#roleplayScenes .cat-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  showRoleplay();
-}
-
-function showRoleplay() {
-  const rp = roleplayData[currentRoleplayIndex];
-  if (!rp) return;
-  document.getElementById('roleplayTitle').textContent = rp.title;
-  document.getElementById('roleplayDialogue').innerHTML = rp.dialogue.map(d =>
-    `<div class="rp-line">
-      <div class="rp-speaker">${d.speaker}</div>
-      <div class="rp-bubble">
-        <div class="rp-thai">${d.thai}</div>
-        <div class="rp-romaji">${d.romaji}</div>
-        <div class="rp-jp">${d.jp}</div>
-      </div>
-    </div>`
-  ).join('');
-  document.getElementById('roleplayVocab').innerHTML =
-    '<div class="rp-vocab-title">Key Vocabulary</div>' +
-    rp.vocab.map(v =>
-      `<div class="rp-vocab-item"><span class="rp-v-thai">${v.thai}</span> <span class="rp-v-romaji">(${v.romaji})</span> <span class="rp-v-jp">${v.jp}</span></div>`
-    ).join('');
-  document.getElementById('roleplayCounter').textContent = (currentRoleplayIndex + 1) + ' / ' + roleplayData.length;
-}
-
-function nextRoleplay() {
-  currentRoleplayIndex = (currentRoleplayIndex + 1) % roleplayData.length;
-  renderRoleplayScenes();
-}
-function prevRoleplay() {
-  currentRoleplayIndex = (currentRoleplayIndex - 1 + roleplayData.length) % roleplayData.length;
-  renderRoleplayScenes();
-}
-
-// ---- CAR Templates ----
-function renderCarCategories() {
-  const container = document.getElementById('carCategories');
-  if (!container) return;
-  container.innerHTML = carData.map((c, i) =>
-    `<button class="cat-btn${i === 0 ? ' active' : ''}" onclick="showCarTemplate(${i}, this)">${c.category}</button>`
-  ).join('');
-  showCarTemplate(0, null);
-}
-
-function showCarTemplate(idx, btn) {
-  if (btn) {
-    document.querySelectorAll('#carCategories .cat-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  }
-  const car = carData[idx];
-  if (!car) return;
-  document.getElementById('carTemplate').innerHTML =
-    `<div class="car-title">${car.title}</div>` +
-    car.sections.map(s =>
-      `<div class="car-section">
-        <div class="car-label">${s.label}</div>
-        <div class="car-thai">${s.thai}</div>
-        <div class="car-jp">${s.jp}</div>
-      </div>`
-    ).join('') +
-    `<button class="fc-btn good" onclick="copyCarText(${idx})" style="margin-top:12px">📋 タイ語をコピー</button>`;
-}
-
-function copyCarText(idx) {
-  const car = carData[idx];
-  const text = car.sections.map(s => s.label + '\n' + s.thai).join('\n\n');
-  navigator.clipboard.writeText(text).then(() => {
-    const btn = document.querySelector('#carTemplate .fc-btn');
-    if (btn) { btn.textContent = '✓ コピーしました！'; setTimeout(() => btn.textContent = '📋 タイ語をコピー', 2000); }
-  });
-}
-
-// ---- Email Templates ----
-function renderEmailCategories() {
-  const container = document.getElementById('emailCategories');
-  if (!container) return;
-  container.innerHTML = emailData.map((e, i) =>
-    `<button class="cat-btn${i === 0 ? ' active' : ''}" onclick="showEmailTemplate(${i}, this)">${e.category}</button>`
-  ).join('');
-  showEmailTemplate(0, null);
-}
-
-function showEmailTemplate(idx, btn) {
-  if (btn) {
-    document.querySelectorAll('#emailCategories .cat-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  }
-  const email = emailData[idx];
-  if (!email) return;
-  document.getElementById('emailTemplate').innerHTML =
-    `<div class="email-subject">${email.subject}</div>
-    <div class="email-body-section">
-      <div class="email-lang-label">🇹🇭 タイ語</div>
-      <pre class="email-text thai-text">${email.thai}</pre>
-    </div>
-    <div class="email-body-section">
-      <div class="email-lang-label">🇯🇵 日本語</div>
-      <pre class="email-text jp-text">${email.jp}</pre>
-    </div>
-    <button class="fc-btn good" onclick="copyEmailText(${idx})" style="margin-top:12px">📋 タイ語をコピー</button>`;
-}
-
-function copyEmailText(idx) {
-  const email = emailData[idx];
-  navigator.clipboard.writeText(email.thai).then(() => {
-    const btn = document.querySelector('#emailTemplate .fc-btn');
-    if (btn) { btn.textContent = '✓ コピーしました！'; setTimeout(() => btn.textContent = '📋 タイ語をコピー', 2000); }
-  });
-}
-
-// Init business tab
-if (typeof roleplayData !== 'undefined') {
-  renderRoleplayScenes();
-}
 
 // =============================================
 // PHASE 3: 指示出しドリル＋会議シミュレーション
@@ -1769,13 +1381,9 @@ Object.assign(window, {
   playAudio, setSpeechRate, toggleAutoPlay, switchTab, updateProgress,
   setPhraseMode, setPhraseCategory, showPhrase, nextPhrase, prevPhrase, markPhrase,
   setVocabMode, setCategory, setFreqFilter, setSceneFilter,
-  startCards, showMeaning, nextCard, showQuizCard, selectQuizChoice, quizNext,
+  startCards, showMeaning, nextCard,
   startSrsReview, toggleGrammar, togglePractice, answerPractice, resetPractice,
-  retryWrongAnswers, playListeningAudio, listeningNext, selectListeningChoice,
-  startListeningQuiz, renderHomeScreen,
-  setBusinessMode, selectRoleplay, nextRoleplay, prevRoleplay,
-  showCarTemplate, copyCarText, renderCarCategories,
-  showEmailTemplate, copyEmailText, renderEmailCategories,
+  renderHomeScreen,
   // Phase 3
   switchDrillMode, setDrillScene, nextDrill, prevDrill,
   toggleDrillRecord, playDrillModel,
