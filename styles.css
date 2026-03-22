@@ -173,7 +173,7 @@ body {
 .tab:hover:not(.active) {
   border-color: var(--accent);
   color: var(--text);
-  background: rgba(184, 149, 110, 0.05);
+  background: var(--progress-bg);
 }
 
 /* ---- Sections ---- */
@@ -583,7 +583,7 @@ body {
   font-size: 0.81rem;
   color: var(--muted);
   line-height: 1.65;
-  background: rgba(184, 149, 110, 0.03);
+  background: rgba(45, 212, 191, 0.03);
 }
 
 /* ---- Settings ---- */
@@ -1377,7 +1377,7 @@ body {
 }
 
 .rp-bubble {
-  background: rgba(184, 149, 110, 0.08);
+  background: rgba(45, 212, 191, 0.08);
   border-radius: 12px;
   padding: 10px 14px;
   flex: 1;
@@ -1513,7 +1513,7 @@ body {
   word-wrap: break-word;
   margin: 0;
   padding: 12px;
-  background: rgba(184, 149, 110, 0.06);
+  background: rgba(45, 212, 191, 0.06);
   border-radius: 8px;
 }
 

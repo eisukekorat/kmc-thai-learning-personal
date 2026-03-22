@@ -226,13 +226,13 @@ let grammarQuizScores = JSON.parse(localStorage.getItem('grammarQuizScores') || 
 function saveGrammarQuizScores() { localStorage.setItem('grammarQuizScores', JSON.stringify(grammarQuizScores)); }
 
 function updateProgressDisplay() {
-  const vocabCount = Object.keys(progress.vocabLearned).filter(k => progress.vocabLearned[k]).length;
-  const phraseCount = Object.keys(progress.phrasesLearned).filter(k => progress.phrasesLearned[k]).length;
+  // ホームが表示されている時だけ renderHomeScreen() で更新する
+  // （IDが変わったため、ここでは文法カウントのみ安全に更新）
   const grammarCount = Object.keys(progress.grammarLearned).filter(k => progress.grammarLearned[k]).length;
-
-  document.getElementById('homeVocabProg').textContent = vocabCount + '/200';
-  document.getElementById('homePhraseProg').textContent = phraseCount + '/200';
-  document.getElementById('homeGrammarProg').textContent = grammarCount + '/20';
+  const grammarEl = document.getElementById('homeGrammarProg');
+  if (grammarEl) grammarEl.textContent = grammarCount + '/20';
+  const grammarBar = document.getElementById('grammarProgBar');
+  if (grammarBar) grammarBar.style.width = Math.round(grammarCount / 20 * 100) + '%';
 }
 
 // ---- Tabs ----
