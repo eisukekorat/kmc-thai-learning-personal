@@ -656,23 +656,47 @@ function getMotivationMessage() {
 }
 
 function renderHomeScreen() {
-  // 進捗
-  const vocabCount = Object.keys(progress.vocabLearned).filter(k => progress.vocabLearned[k]).length;
-  const phraseCount = Object.keys(progress.phrasesLearned).filter(k => progress.phrasesLearned[k]).length;
+  // --- メトリクス ---
+  const srsCount = Object.keys(srsData).length;
+  const reviewWords = getTodayReviewWords();
   const grammarCount = Object.keys(progress.grammarLearned).filter(k => progress.grammarLearned[k]).length;
-  document.getElementById('homeVocabProg').textContent = vocabCount + '/200';
-  document.getElementById('homePhraseProg').textContent = phraseCount + '/200';
+
+  document.getElementById('homeSrsCount').textContent = srsCount + '語';
+  document.getElementById('homeTodayPractice').textContent = reviewWords.length + '枚';
   document.getElementById('homeGrammarProg').textContent = grammarCount + '/20';
 
-  // 復習リスト
-  const reviewWords = getTodayReviewWords();
+  // SRSプログレスバー（最大320語基準）
+  const srsBar = document.getElementById('vocabProgBar');
+  if (srsBar) srsBar.style.width = Math.min(100, Math.round(srsCount / 320 * 100)) + '%';
+  // 今日の練習バー（最大20枚基準）
+  const todayBar = document.getElementById('phraseProgBar');
+  if (todayBar) todayBar.style.width = Math.min(100, Math.round(reviewWords.length / 20 * 100)) + '%';
+  // 文法バー
+  const grammarBar = document.getElementById('grammarProgBar');
+  if (grammarBar) grammarBar.style.width = Math.round(grammarCount / 20 * 100) + '%';
+
+  // --- 学習履歴チャート（データがある時だけ表示）---
+  const chartSection = document.getElementById('chartSection');
+  const storedLog = JSON.parse(localStorage.getItem('learningLog_v1') || '[]');
+  const hasHistory = storedLog.length > 0;
+  if (chartSection) chartSection.style.display = hasHistory ? 'block' : 'none';
+
+  // --- 今日の復習ボックス ---
+  const srsBox = document.getElementById('srsReviewBox');
   const listEl = document.getElementById('srsReviewList');
   const startBtn = document.getElementById('srsStartBtn');
 
   if (reviewWords.length === 0) {
-    listEl.innerHTML = '<div class="srs-empty">復習すべき単語はありません 🎉</div>';
-    startBtn.style.display = 'none';
+    // 復習なし：SRS登録済みなら小さく「全部クリア」表示、未登録なら非表示
+    if (srsCount > 0) {
+      if (srsBox) srsBox.style.display = 'block';
+      listEl.innerHTML = '<div class="srs-empty">今日の復習はありません 🎉</div>';
+      startBtn.style.display = 'none';
+    } else {
+      if (srsBox) srsBox.style.display = 'none';
+    }
   } else {
+    if (srsBox) srsBox.style.display = 'block';
     listEl.innerHTML = reviewWords.map(item => {
       const overdueDays = Math.floor((new Date(getTodayStr()) - new Date(item.data.nextReview)) / (1000*60*60*24)) + 1;
       return `<div class="srs-word-row">

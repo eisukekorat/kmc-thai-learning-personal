@@ -53,17 +53,17 @@
 
   <div class="home-progress">
     <div class="home-prog-item">
-      <div class="home-prog-label">単語</div>
-      <div class="home-prog-val" id="homeVocabProg">0/200</div>
+      <div class="home-prog-label">SRS管理中</div>
+      <div class="home-prog-val" id="homeSrsCount">0語</div>
       <div class="prog-bar-wrap"><div class="prog-bar" id="vocabProgBar" style="width:0%"></div></div>
     </div>
     <div class="home-prog-item">
-      <div class="home-prog-label">フレーズ</div>
-      <div class="home-prog-val" id="homePhraseProg">0/200</div>
+      <div class="home-prog-label">今日の練習</div>
+      <div class="home-prog-val" id="homeTodayPractice">0枚</div>
       <div class="prog-bar-wrap"><div class="prog-bar" id="phraseProgBar" style="width:0%"></div></div>
     </div>
     <div class="home-prog-item">
-      <div class="home-prog-label">文法</div>
+      <div class="home-prog-label">文法パターン</div>
       <div class="home-prog-val" id="homeGrammarProg">0/20</div>
       <div class="prog-bar-wrap"><div class="prog-bar" id="grammarProgBar" style="width:0%"></div></div>
     </div>
@@ -71,12 +71,12 @@
 
   <div id="motivationMsg" style="text-align:center; font-size:0.82rem; color:#d4b87a; margin:8px 0; min-height:1.2em;"></div>
 
-  <div class="chart-section">
+  <div class="chart-section" id="chartSection">
     <div class="chart-title">📊 学習履歴（7日間）</div>
     <div class="chart-bars" id="learningChart"></div>
   </div>
 
-  <div class="srs-review-box">
+  <div class="srs-review-box" id="srsReviewBox">
     <div class="srs-title">🔥 今日の復習</div>
     <div id="srsReviewList" class="srs-list">
       <div class="srs-empty">復習すべき単語はありません 🎉</div>
