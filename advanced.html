@@ -188,8 +188,80 @@
 
 <!-- GRAMMAR -->
 <div class="section" id="grammar">
-  <p class="section-title">レベル3 文法ポイント（タップで開く）</p>
-  <div class="grammar-list" id="grammarList">
+  <p class="section-title">📖 文法ポイント</p>
+
+  <!-- モード切り替え -->
+  <div class="mode-btns" style="margin-bottom:16px;">
+    <button class="mode-btn active" id="grammarRefBtn" onclick="switchGrammarMode('ref', this)">📚 文法リファレンス</button>
+    <button class="mode-btn" id="grammarDrillBtn" onclick="switchGrammarMode('drill', this)">🤖 AIドリル</button>
+  </div>
+
+  <!-- 文法リファレンス（既存） -->
+  <div id="grammarRefPanel">
+    <div class="grammar-list" id="grammarList"></div>
+  </div>
+
+  <!-- Claude文法ドリル（新規） -->
+  <div id="grammarDrillPanel" style="display:none;">
+
+    <!-- 文法パターン選択 -->
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px;">
+      <div style="font-size:0.78rem; color:var(--muted); margin-bottom:10px;">練習する文法パターンを選んでください</div>
+      <div id="grammarDrillSelector" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+    </div>
+
+    <!-- 選択中パターン表示 -->
+    <div id="grammarDrillInfo" style="display:none; background:var(--surface2); border-left:3px solid var(--accent); border-radius:8px; padding:12px 14px; margin-bottom:14px;">
+      <div style="font-size:0.75rem; color:var(--accent); margin-bottom:4px;">練習中のパターン</div>
+      <div id="grammarDrillPatternName" style="font-size:0.9rem; font-weight:600;"></div>
+      <div id="grammarDrillPatternDesc" style="font-size:0.8rem; color:var(--muted); margin-top:2px;"></div>
+    </div>
+
+    <!-- 問題エリア -->
+    <div id="grammarDrillQuestionArea" style="display:none; display:flex; flex-direction:column; gap:14px;">
+
+      <!-- 問題カード -->
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px; text-align:center;">
+        <div style="font-size:0.72rem; color:var(--muted); margin-bottom:10px;">📝 タイ語で答えてください</div>
+        <div id="grammarDrillQ" style="font-size:1.05rem; color:var(--text); line-height:1.6; min-height:2em;"></div>
+        <div id="grammarDrillHint" style="font-size:0.78rem; color:var(--accent); margin-top:8px;"></div>
+      </div>
+
+      <!-- 回答入力 -->
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="grammarDrillAnswer" placeholder="タイ語で入力..." style="flex:1; background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:12px 14px; color:var(--text); font-size:0.95rem; font-family:'Sarabun',sans-serif;">
+        <button onclick="submitGrammarDrill()" style="background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px 18px; cursor:pointer; font-size:0.85rem; white-space:nowrap;">送信 →</button>
+      </div>
+
+      <!-- 音声で答えるボタン -->
+      <div style="text-align:center;">
+        <button id="grammarVoiceBtn" onclick="toggleGrammarVoice()" style="background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:8px 18px; color:var(--text-dim); cursor:pointer; font-size:0.82rem;">🎙 音声で答える</button>
+      </div>
+
+      <!-- Claude添削結果 -->
+      <div id="grammarDrillResult" style="display:none; flex-direction:column; gap:10px;">
+        <div style="background:var(--surface2); border:1px solid var(--accent2); border-radius:12px; padding:14px;">
+          <div style="font-size:0.72rem; color:var(--accent2); margin-bottom:6px;">🤖 Claudeの添削</div>
+          <div id="grammarDrillFeedback" style="font-size:0.84rem; color:var(--text-dim); line-height:1.7; white-space:pre-wrap;"></div>
+        </div>
+        <div style="background:var(--surface2); border:1px solid var(--green); border-radius:12px; padding:14px;">
+          <div style="font-size:0.72rem; color:var(--green); margin-bottom:6px;">✅ お手本</div>
+          <div id="grammarDrillModel" style="font-size:1rem; color:var(--thai); font-family:'Sarabun',sans-serif; margin-bottom:4px;"></div>
+          <button onclick="playGrammarModel()" style="margin-top:6px; background:var(--surface3); border:1px solid var(--border); border-radius:8px; padding:6px 14px; color:var(--text); cursor:pointer; font-size:0.78rem;">🔊 聞く</button>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:center;">
+          <button onclick="nextGrammarDrill()" style="background:var(--accent); color:#fff; border:none; border-radius:10px; padding:10px 24px; cursor:pointer; font-weight:600;">次の問題 →</button>
+        </div>
+      </div>
+
+      <div id="grammarDrillCounter" style="text-align:center; font-size:0.78rem; color:var(--muted);"></div>
+    </div>
+
+    <!-- スタートボタン -->
+    <div id="grammarDrillStartArea" style="text-align:center; padding:20px;">
+      <div style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">パターンを選んでスタート</div>
+      <button onclick="startGrammarDrill()" id="grammarDrillStartBtn" style="background:var(--accent); color:#fff; border:none; border-radius:12px; padding:14px 32px; cursor:pointer; font-size:1rem; font-weight:600;" disabled>🚀 ドリル開始</button>
+    </div>
   </div>
 </div>
 

@@ -1027,6 +1027,213 @@ renderHomeScreen = function() {
 };
 
 // =============================================
+// PHASE 4: 文法ドリル（Claude生成）
+// =============================================
+
+let grammarDrillMode = 'ref'; // 'ref' | 'drill'
+let selectedGrammarPattern = null;
+let grammarDrillQuestions = [];
+let grammarDrillIndex = 0;
+let grammarDrillRecording = false;
+
+function switchGrammarMode(mode, btn) {
+  grammarDrillMode = mode;
+  document.querySelectorAll('#grammar .mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('grammarRefPanel').style.display = mode === 'ref' ? '' : 'none';
+  document.getElementById('grammarDrillPanel').style.display = mode === 'drill' ? '' : 'none';
+  if (mode === 'drill') renderGrammarDrillSelector();
+}
+
+function renderGrammarDrillSelector() {
+  const el = document.getElementById('grammarDrillSelector');
+  if (!el || !grammarData) return;
+  el.innerHTML = grammarData.map((g, i) =>
+    `<button onclick="selectGrammarPattern(${i}, this)" style="background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:6px 14px; color:var(--text-dim); cursor:pointer; font-size:0.8rem; transition:all 0.2s;">${g.tag || g.title}</button>`
+  ).join('');
+}
+
+function selectGrammarPattern(idx, btn) {
+  selectedGrammarPattern = idx;
+  document.querySelectorAll('#grammarDrillSelector button').forEach(b => {
+    b.style.background = 'var(--surface2)';
+    b.style.color = 'var(--text-dim)';
+    b.style.borderColor = 'var(--border)';
+  });
+  btn.style.background = 'var(--accent)';
+  btn.style.color = '#fff';
+  btn.style.borderColor = 'var(--accent)';
+
+  const g = grammarData[idx];
+  document.getElementById('grammarDrillInfo').style.display = '';
+  document.getElementById('grammarDrillPatternName').textContent = g.title;
+  document.getElementById('grammarDrillPatternDesc').textContent = g.pattern || '';
+  document.getElementById('grammarDrillStartBtn').disabled = false;
+}
+
+async function startGrammarDrill() {
+  if (selectedGrammarPattern === null) return;
+  const key = getClaudeKey();
+  if (!key) {
+    alert('設定画面でClaude APIキーを入力してください');
+    return;
+  }
+
+  const g = grammarData[selectedGrammarPattern];
+  document.getElementById('grammarDrillStartArea').style.display = 'none';
+  document.getElementById('grammarDrillQuestionArea').style.display = 'flex';
+  document.getElementById('grammarDrillResult').style.display = 'none';
+  document.getElementById('grammarDrillQ').textContent = '問題を生成中...';
+  document.getElementById('grammarDrillHint').textContent = '';
+  document.getElementById('grammarDrillCounter').textContent = '';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 600,
+        messages: [{
+          role: 'user',
+          content: `タイ語学習用の文法ドリルを作ってください。
+文法パターン：「${g.title}」（${g.pattern || ''}）
+学習者のプロフィール：日本人、製造業・品質管理、タイ人部下への指示・会議でのやりとりが目標
+
+以下の形式でJSONのみを返してください（説明文不要）：
+[
+  {"question": "日本語のお題（タイ語に訳してください）", "hint": "使うべきパターンのヒント", "model": "タイ語のお手本"},
+  {"question": "...", "hint": "...", "model": "..."},
+  {"question": "...", "hint": "...", "model": "..."}
+]
+
+業務に関連した3問を作成してください。`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content[0].text.trim();
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    grammarDrillQuestions = JSON.parse(jsonMatch[0]);
+    grammarDrillIndex = 0;
+    showGrammarDrillQuestion();
+  } catch(e) {
+    document.getElementById('grammarDrillQ').textContent = '⚠️ 問題の生成に失敗しました: ' + e.message;
+  }
+}
+
+function showGrammarDrillQuestion() {
+  if (grammarDrillIndex >= grammarDrillQuestions.length) {
+    document.getElementById('grammarDrillQ').textContent = '🎉 全問完了！お疲れさまでした';
+    document.getElementById('grammarDrillHint').textContent = '';
+    document.getElementById('grammarDrillResult').style.display = 'none';
+    document.getElementById('grammarDrillCounter').textContent = '';
+    document.getElementById('grammarDrillAnswer').style.display = 'none';
+    document.querySelector('#grammarDrillQuestionArea button[onclick="submitGrammarDrill()"]').style.display = 'none';
+    return;
+  }
+  const q = grammarDrillQuestions[grammarDrillIndex];
+  document.getElementById('grammarDrillQ').textContent = q.question;
+  document.getElementById('grammarDrillHint').textContent = '💡 ' + q.hint;
+  document.getElementById('grammarDrillResult').style.display = 'none';
+  document.getElementById('grammarDrillAnswer').value = '';
+  document.getElementById('grammarDrillAnswer').style.display = '';
+  document.querySelector('#grammarDrillQuestionArea button[onclick="submitGrammarDrill()"]').style.display = '';
+  document.getElementById('grammarDrillCounter').textContent = (grammarDrillIndex + 1) + ' / ' + grammarDrillQuestions.length;
+}
+
+async function submitGrammarDrill() {
+  const userAnswer = document.getElementById('grammarDrillAnswer').value.trim();
+  if (!userAnswer) return;
+  const key = getClaudeKey();
+  const q = grammarDrillQuestions[grammarDrillIndex];
+  const g = grammarData[selectedGrammarPattern];
+
+  document.getElementById('grammarDrillFeedback').textContent = '添削中...';
+  document.getElementById('grammarDrillModel').textContent = q.model;
+  document.getElementById('grammarDrillResult').style.display = 'flex';
+
+  if (key) {
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 200,
+          messages: [{
+            role: 'user',
+            content: `タイ語文法ドリルの添削をしてください。
+文法パターン：「${g.title}」
+お題：「${q.question}」
+お手本：「${q.model}」
+学習者の回答：「${userAnswer}」
+
+日本語で3行以内で添削してください：
+・正しいか、意味は通じるか
+・お手本との主な違い（あれば）
+・一言アドバイス`
+          }]
+        })
+      });
+      const data = await res.json();
+      document.getElementById('grammarDrillFeedback').textContent = data.content[0].text;
+    } catch(e) {
+      document.getElementById('grammarDrillFeedback').textContent = '（添削の取得に失敗しました）';
+    }
+  } else {
+    document.getElementById('grammarDrillFeedback').textContent = '（Claude APIキーを設定すると添削が受けられます）';
+  }
+}
+
+function nextGrammarDrill() {
+  grammarDrillIndex++;
+  showGrammarDrillQuestion();
+}
+
+function playGrammarModel() {
+  const text = document.getElementById('grammarDrillModel').textContent;
+  if (text) playAudioTTS(text);
+}
+
+async function toggleGrammarVoice() {
+  if (!getOpenAIKey()) {
+    document.getElementById('grammarVoiceBtn').textContent = '⚠️ OpenAI APIキーが必要です';
+    return;
+  }
+  if (!grammarDrillRecording) {
+    grammarDrillRecording = true;
+    document.getElementById('grammarVoiceBtn').textContent = '⏹ 停止して送信';
+    document.getElementById('grammarVoiceBtn').style.borderColor = 'var(--red)';
+    await startMediaRecorder(async (blob) => {
+      grammarDrillRecording = false;
+      document.getElementById('grammarVoiceBtn').textContent = '🎙 音声で答える';
+      document.getElementById('grammarVoiceBtn').style.borderColor = 'var(--border)';
+      const text = await sendToWhisper(blob);
+      if (text) {
+        document.getElementById('grammarDrillAnswer').value = text;
+        submitGrammarDrill();
+      }
+    });
+  } else {
+    grammarDrillRecording = false;
+    stopMediaRecorder();
+    document.getElementById('grammarVoiceBtn').textContent = '🎙 音声で答える';
+    document.getElementById('grammarVoiceBtn').style.borderColor = 'var(--border)';
+  }
+}
+
+// =============================================
 // PHASE 3: 指示出しドリル＋会議シミュレーション
 // =============================================
 
@@ -1384,6 +1591,9 @@ Object.assign(window, {
   startCards, showMeaning, nextCard,
   startSrsReview, toggleGrammar, togglePractice, answerPractice, resetPractice,
   renderHomeScreen,
+  // Phase 4
+  switchGrammarMode, selectGrammarPattern, startGrammarDrill,
+  submitGrammarDrill, nextGrammarDrill, playGrammarModel, toggleGrammarVoice,
   // Phase 3
   switchDrillMode, setDrillScene, nextDrill, prevDrill,
   toggleDrillRecord, playDrillModel,
