@@ -82,6 +82,37 @@ async function playAudioTTS(text) {
   }
 }
 
+// ================================
+// CLAUDE API: 共通ヘルパー（iOS PWA対応）
+// ================================
+const CLAUDE_ENDPOINT = 'https://api.anthropic.com/v1/messages';
+const isPWA = window.navigator.standalone === true;
+
+async function claudeFetch(key, body) {
+  const res = await fetch(CLAUDE_ENDPOINT, {
+    method: 'POST',
+    mode: 'cors',
+    credentials: 'omit',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error('API ' + res.status + ': ' + (data.error?.message || JSON.stringify(data)));
+  return data;
+}
+
+function pwaErrorMsg(e) {
+  if (e instanceof TypeError && isPWA) {
+    return 'ホーム画面アプリではAI機能が制限されます。SafariブラウザでURLを直接開いてご利用ください。';
+  }
+  return e.message || e.toString();
+}
+
 function playAudio(type) {
   const text = type === 'phrase' ?
     document.getElementById('phraseThai').textContent :
@@ -102,28 +133,17 @@ async function fetchClaudeTip(word) {
   tipText.textContent = '考え中...';
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 300,
-        messages: [{
-          role: 'user',
-          content: `タイ語単語「${word.thai}」（読み：${word.romaji}、意味：${word.jp}）の覚え方を日本語で教えてください。以下を簡潔に（合計5行以内）：\n・発音・語感のコツ（日本語の音に近いものがあれば）\n・語呂合わせや記憶の引っかかり\n・製造業・職場での短い例文（タイ語と日本語訳）`
-        }]
-      })
+    const data = await claudeFetch(key, {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 300,
+      messages: [{
+        role: 'user',
+        content: `タイ語単語「${word.thai}」（読み：${word.romaji}、意味：${word.jp}）の覚え方を日本語で教えてください。以下を簡潔に（合計5行以内）：\n・発音・語感のコツ（日本語の音に近いものがあれば）\n・語呂合わせや記憶の引っかかり\n・製造業・職場での短い例文（タイ語と日本語訳）`
+      }]
     });
-    if (!res.ok) throw new Error('Claude API error: ' + res.status);
-    const data = await res.json();
     tipText.textContent = data.content[0].text;
   } catch (e) {
-    tipText.textContent = '⚠️ ヒントの取得に失敗しました（APIキーを設定画面で確認してください）';
+    tipText.textContent = '⚠️ ' + pwaErrorMsg(e);
     console.error('Claude tip error:', e);
   }
 }
@@ -1168,20 +1188,12 @@ async function startGrammarDrill() {
   document.getElementById('grammarDrillCounter').textContent = '';
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 600,
-        messages: [{
-          role: 'user',
-          content: `タイ語学習用の文法ドリルを作ってください。
+    const data = await claudeFetch(key, {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 600,
+      messages: [{
+        role: 'user',
+        content: `タイ語学習用の文法ドリルを作ってください。
 文法パターン：「${g.title}」（${g.pattern || ''}）
 学習者のプロフィール：日本人、製造業・品質管理、タイ人部下への指示・会議でのやりとりが目標
 
@@ -1193,17 +1205,15 @@ async function startGrammarDrill() {
 ]
 
 業務に関連した3問を作成してください。`
-        }]
-      })
+      }]
     });
-    const data = await res.json();
     const text = data.content[0].text.trim();
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     grammarDrillQuestions = JSON.parse(jsonMatch[0]);
     grammarDrillIndex = 0;
     showGrammarDrillQuestion();
   } catch(e) {
-    document.getElementById('grammarDrillQ').textContent = '⚠️ 問題の生成に失敗しました: ' + e.message;
+    document.getElementById('grammarDrillQ').textContent = '⚠️ ' + pwaErrorMsg(e);
   }
 }
 
@@ -1240,20 +1250,12 @@ async function submitGrammarDrill() {
 
   if (key) {
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': key,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 200,
-          messages: [{
-            role: 'user',
-            content: `タイ語文法ドリルの添削をしてください。
+      const data = await claudeFetch(key, {
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 200,
+        messages: [{
+          role: 'user',
+          content: `タイ語文法ドリルの添削をしてください。
 文法パターン：「${g.title}」
 お題：「${q.question}」
 お手本：「${q.model}」
@@ -1264,9 +1266,7 @@ async function submitGrammarDrill() {
 ・お手本との主な違い（あれば）
 ・一言アドバイス`
           }]
-        })
       });
-      const data = await res.json();
       document.getElementById('grammarDrillFeedback').textContent = data.content[0].text;
     } catch(e) {
       document.getElementById('grammarDrillFeedback').textContent = '（添削の取得に失敗しました）';
@@ -1531,24 +1531,14 @@ async function getDrillFeedback(userText) {
     return;
   }
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 250,
-        messages: [{
-          role: 'user',
-          content: `タイ語学習者のスピーキング練習のフィードバックをしてください。\nお題（日本語）：「${scenario.jp}」\nお手本（タイ語）：「${scenario.thai}」\n学習者が言ったこと：「${userText}」\n\n簡潔なフィードバックを日本語で（3行以内）：\n・意味は通じているか\n・お手本との主な違い（あれば）\n・一言アドバイス`
-        }]
-      })
+    const data = await claudeFetch(key, {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 250,
+      messages: [{
+        role: 'user',
+        content: `タイ語学習者のスピーキング練習のフィードバックをしてください。\nお題（日本語）：「${scenario.jp}」\nお手本（タイ語）：「${scenario.thai}」\n学習者が言ったこと：「${userText}」\n\n簡潔なフィードバックを日本語で（3行以内）：\n・意味は通じているか\n・お手本との主な違い（あれば）\n・一言アドバイス`
+      }]
     });
-    const data = await res.json();
     document.getElementById('drillFeedback').textContent = data.content[0].text;
     logLearningEvent({ type: 'drill', scene: scenario.scene, jp: scenario.jp });
   } catch(e) {
@@ -1622,24 +1612,14 @@ async function analyzeWeakness() {
 `.trim();
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 400,
-        messages: [{
-          role: 'user',
-          content: `タイ語学習者の1週間の学習ログを分析してください。\n${summary}\n\n以下を日本語で簡潔に答えてください（合計5〜8行）：\n1. 弱点・苦手なポイント（具体的な単語・文法パターン名を挙げて）\n2. 重点的に練習すべきこと（1〜2点）\n3. 励ましのひとこと`
-        }]
-      })
+    const data = await claudeFetch(key, {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 400,
+      messages: [{
+        role: 'user',
+        content: `タイ語学習者の1週間の学習ログを分析してください。\n${summary}\n\n以下を日本語で簡潔に答えてください（合計5〜8行）：\n1. 弱点・苦手なポイント（具体的な単語・文法パターン名を挙げて）\n2. 重点的に練習すべきこと（1〜2点）\n3. 励ましのひとこと`
+      }]
     });
-    const data = await res.json();
     textEl.textContent = data.content[0].text;
     resultEl.style.display = 'flex';
 
@@ -1721,20 +1701,12 @@ async function generatePhrases() {
   resultEl.innerHTML = '';
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 700,
-        messages: [{
-          role: 'user',
-          content: `あなたはタイ語の専門家です。製造業の日本人管理職がタイ人スタッフに話しかける場面です。
+    const data = await claudeFetch(key, {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 700,
+      messages: [{
+        role: 'user',
+        content: `あなたはタイ語の専門家です。製造業の日本人管理職がタイ人スタッフに話しかける場面です。
 場面：「${input}」
 この場面で使えるタイ語フレーズを3パターン、以下のJSON形式のみで返してください（余分なテキスト不要）：
 {
@@ -1746,11 +1718,8 @@ async function generatePhrases() {
 - normal: 普通の表現（普段の指示・報告）
 - casual: くだけた表現（気心知れた部下向け）
 - noteには使い方ひとことメモ（日本語・1行）`
-        }]
-      })
+      }]
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error('API ' + res.status + ': ' + (data.error?.message || JSON.stringify(data)));
     const rawText = data.content[0].text;
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('レスポンスのフォーマットが不正です');
@@ -1908,22 +1877,12 @@ async function getSimResponse(userText) {
   try {
     const sysPrompt = simSystemPrompts[currentSimScene];
     const messages = simHistory.map(h => ({ role: h.role, content: h.content }));
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': claudeKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 150,
-        system: sysPrompt,
-        messages
-      })
+    const data = await claudeFetch(claudeKey, {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 150,
+      system: sysPrompt,
+      messages
     });
-    const data = await res.json();
     const reply = data.content[0].text;
     // [タイ語]（日本語訳）のパース
     const match = reply.match(/^(.+?)（(.+?)）/s);
