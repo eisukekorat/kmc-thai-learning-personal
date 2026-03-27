@@ -4,23 +4,50 @@
 // =============================================
 
 // ================================
-// AUDIO: OpenAI TTS（フォールバック: Web Speech API）
+// AUDIO: Google Cloud TTS → OpenAI TTS → Web Speech API
 // ================================
 const ttsCache = new Map(); // メモリキャッシュ（同じ単語を何度も呼ばない）
 
 async function playAudioTTS(text) {
   if (!text || text === '–' || text.includes('🎉')) return;
 
-  const openaiKey = getOpenAIKey();
+  if (ttsCache.has(text)) {
+    new Audio(ttsCache.get(text)).play();
+    return;
+  }
 
-  // OpenAI TTS が使える場合
+  const googleKey = getGoogleTTSKey();
+
+  // 1. Google Cloud TTS（ネイティブ品質のタイ語）
+  if (googleKey) {
+    try {
+      const res = await fetch(
+        'https://texttospeech.googleapis.com/v1/text:synthesize?key=' + googleKey,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input: { text },
+            voice: { languageCode: 'th-TH', name: 'th-TH-Neural2-C' },
+            audioConfig: { audioEncoding: 'MP3', speakingRate: speechRate }
+          })
+        }
+      );
+      if (!res.ok) throw new Error('Google TTS error: ' + res.status);
+      const data = await res.json();
+      const url = 'data:audio/mp3;base64,' + data.audioContent;
+      ttsCache.set(text, url);
+      new Audio(url).play();
+      return;
+    } catch (e) {
+      console.warn('Google TTS失敗:', e);
+    }
+  }
+
+  // 2. OpenAI TTS（フォールバック）
+  const openaiKey = getOpenAIKey();
   if (openaiKey) {
     try {
-      if (ttsCache.has(text)) {
-        const url = ttsCache.get(text);
-        new Audio(url).play();
-        return;
-      }
       const res = await fetch('https://api.openai.com/v1/audio/speech', {
         method: 'POST',
         headers: {
@@ -34,7 +61,7 @@ async function playAudioTTS(text) {
           speed: speechRate
         })
       });
-      if (!res.ok) throw new Error('TTS API error: ' + res.status);
+      if (!res.ok) throw new Error('OpenAI TTS error: ' + res.status);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       ttsCache.set(text, url);
@@ -45,7 +72,7 @@ async function playAudioTTS(text) {
     }
   }
 
-  // フォールバック: Web Speech API
+  // 3. Web Speech API（最終フォールバック）
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -123,9 +150,12 @@ function toggleAutoPlay(val) {
 // API KEY MANAGEMENT
 // ================================
 function saveApiKey(type) {
-  const inputId = type === 'openai' ? 'openaiKeyInput' : 'claudeKeyInput';
-  const statusId = type === 'openai' ? 'openaiKeyStatus' : 'claudeKeyStatus';
-  const storageKey = type === 'openai' ? 'openaiApiKey' : 'claudeApiKey';
+  const inputMap = { openai: 'openaiKeyInput', claude: 'claudeKeyInput', google: 'googleKeyInput' };
+  const statusMap = { openai: 'openaiKeyStatus', claude: 'claudeKeyStatus', google: 'googleKeyStatus' };
+  const storageMap = { openai: 'openaiApiKey', claude: 'claudeApiKey', google: 'googleTTSApiKey' };
+  const inputId = inputMap[type];
+  const statusId = statusMap[type];
+  const storageKey = storageMap[type];
   const val = document.getElementById(inputId).value.trim();
   if (!val) {
     document.getElementById(statusId).textContent = '⚠️ キーを入力してください';
@@ -138,10 +168,13 @@ function saveApiKey(type) {
 }
 
 function loadApiKeyStatus() {
+  const googleKey = localStorage.getItem('googleTTSApiKey');
   const openaiKey = localStorage.getItem('openaiApiKey');
   const claudeKey = localStorage.getItem('claudeApiKey');
+  const googleStatus = document.getElementById('googleKeyStatus');
   const openaiStatus = document.getElementById('openaiKeyStatus');
   const claudeStatus = document.getElementById('claudeKeyStatus');
+  if (googleStatus) googleStatus.textContent = googleKey ? '✅ 設定済み' : '未設定';
   if (openaiStatus) openaiStatus.textContent = openaiKey ? '✅ 設定済み' : '未設定';
   if (claudeStatus) claudeStatus.textContent = claudeKey ? '✅ 設定済み' : '未設定';
 }
@@ -149,10 +182,16 @@ function loadApiKeyStatus() {
 let apiKeysVisible = false;
 function showApiKeys() {
   apiKeysVisible = !apiKeysVisible;
+  const googleKey = localStorage.getItem('googleTTSApiKey') || '';
   const openaiKey = localStorage.getItem('openaiApiKey') || '';
   const claudeKey = localStorage.getItem('claudeApiKey') || '';
+  const googleInput = document.getElementById('googleKeyInput');
   const openaiInput = document.getElementById('openaiKeyInput');
   const claudeInput = document.getElementById('claudeKeyInput');
+  if (googleInput) {
+    googleInput.type = apiKeysVisible ? 'text' : 'password';
+    googleInput.value = apiKeysVisible ? googleKey : (googleKey ? '●'.repeat(Math.min(googleKey.length, 20)) : '');
+  }
   if (openaiInput) {
     openaiInput.type = apiKeysVisible ? 'text' : 'password';
     openaiInput.value = apiKeysVisible ? openaiKey : (openaiKey ? '●'.repeat(Math.min(openaiKey.length, 20)) : '');
@@ -165,16 +204,20 @@ function showApiKeys() {
 
 function clearApiKeys() {
   if (!confirm('APIキーを全て削除しますか？')) return;
+  localStorage.removeItem('googleTTSApiKey');
   localStorage.removeItem('openaiApiKey');
   localStorage.removeItem('claudeApiKey');
+  const googleInput = document.getElementById('googleKeyInput');
   const openaiInput = document.getElementById('openaiKeyInput');
   const claudeInput = document.getElementById('claudeKeyInput');
+  if (googleInput) googleInput.value = '';
   if (openaiInput) openaiInput.value = '';
   if (claudeInput) claudeInput.value = '';
   loadApiKeyStatus();
 }
 
 // Helper: get saved API keys (for use in other modules)
+function getGoogleTTSKey() { return localStorage.getItem('googleTTSApiKey') || ''; }
 function getOpenAIKey() { return localStorage.getItem('openaiApiKey') || ''; }
 function getClaudeKey() { return localStorage.getItem('claudeApiKey') || ''; }
 

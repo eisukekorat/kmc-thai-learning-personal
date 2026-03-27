@@ -351,7 +351,16 @@
       </div>
 
       <div style="width:100%; display:flex; flex-direction:column; gap:10px;">
-        <label style="font-size:0.82rem; color:var(--muted);">OpenAI API Key（TTS・音声認識）</label>
+        <label style="font-size:0.82rem; color:var(--muted);">Google Cloud TTS API Key（タイ語音声・推奨）</label>
+        <div style="display:flex; gap:8px;">
+          <input type="password" id="googleKeyInput" placeholder="AIza..." style="flex:1; background:var(--surface3); border:1px solid var(--border); border-radius:8px; padding:10px 12px; color:var(--text); font-size:0.85rem; font-family:monospace;">
+          <button onclick="saveApiKey('google')" style="background:#34a853; color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-size:0.82rem; white-space:nowrap;">保存</button>
+        </div>
+        <div id="googleKeyStatus" style="font-size:0.78rem; color:var(--muted); min-height:1em;"></div>
+      </div>
+
+      <div style="width:100%; display:flex; flex-direction:column; gap:10px;">
+        <label style="font-size:0.82rem; color:var(--muted);">OpenAI API Key（音声認識・TTS）</label>
         <div style="display:flex; gap:8px;">
           <input type="password" id="openaiKeyInput" placeholder="sk-..." style="flex:1; background:var(--surface3); border:1px solid var(--border); border-radius:8px; padding:10px 12px; color:var(--text); font-size:0.85rem; font-family:monospace;">
           <button onclick="saveApiKey('openai')" style="background:var(--accent); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-size:0.82rem; white-space:nowrap;">保存</button>
