@@ -164,7 +164,7 @@ function saveApiKey(type) {
   localStorage.setItem(storageKey, val);
   document.getElementById(statusId).textContent = '✅ 保存しました';
   document.getElementById(inputId).value = '●'.repeat(Math.min(val.length, 20));
-  setTimeout(() => { document.getElementById(statusId).textContent = ''; }, 3000);
+  setTimeout(() => { document.getElementById(statusId).textContent = '✅ 設定済み'; }, 3000);
 }
 
 function loadApiKeyStatus() {
