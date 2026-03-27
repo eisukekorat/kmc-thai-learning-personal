@@ -1750,6 +1750,7 @@ async function generatePhrases() {
       })
     });
     const data = await res.json();
+    if (!res.ok) throw new Error('API ' + res.status + ': ' + (data.error?.message || JSON.stringify(data)));
     const rawText = data.content[0].text;
     const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('レスポンスのフォーマットが不正です');
@@ -1758,7 +1759,7 @@ async function generatePhrases() {
     statusEl.style.display = 'none';
     resultEl.style.display = 'flex';
   } catch(e) {
-    statusEl.textContent = '⚠️ エラー: ' + e.message;
+    statusEl.textContent = '⚠️ エラー: ' + (e.message || e.toString());
   } finally {
     btn.disabled = false;
     btn.textContent = '✨ タイ語フレーズを生成する';
