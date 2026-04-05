@@ -1,5 +1,5 @@
 // Service Worker v5 - KMC Thai Learning App
-const CACHE = 'thai-study-pro-v6';
+const CACHE = 'thai-study-v7';
 const ASSETS = [
   'advanced.html',
   'styles.css',

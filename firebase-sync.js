@@ -33,6 +33,15 @@ const SYNC_KEYS = [
   'customVocab_v1',
   'streakCount',
   'lastAccessDate',
+  'dailyMissions',
+  'missionHistory',
+  'listeningScores',
+  'matchingBestTimes',
+  'diaryEntries',
+  'shadowingHistory',
+  'scanHistory',
+  'userLevel',
+  'streakFreezeUsed',
 ];
 
 // ========== Auth ==========

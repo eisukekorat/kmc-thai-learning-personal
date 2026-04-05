@@ -3,153 +3,373 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>タイ語学習アプリ Personal - AI強化版</title>
-<meta name="theme-color" content="#0a0e14">
+<title>タイ語学習アプリ Personal</title>
+<meta name="theme-color" content="#FAF9F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0C0A09" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="タイ語学習">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a0e14'/><text y='.9em' font-size='80' x='10'>🇹🇭</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23FF6B35'/><text y='.9em' font-size='80' x='10'>🇹🇭</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-<div id="installBanner" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#1a2233; border-top:1px solid #2dd4bf; padding:12px 16px; align-items:center; gap:12px; z-index:9999; font-size:0.85rem;">
+<!-- オフラインバナー -->
+<div id="offlineBanner">📵 オフラインモード - 保存済みコンテンツを表示しています</div>
+
+<!-- インストールバナー -->
+<div id="installBanner">
   <span style="flex:1">📱 ホーム画面に追加してオフラインでも使えます</span>
-  <button id="installBtn" style="background:#2dd4bf; color:#0a0e14; border:none; border-radius:8px; padding:8px 14px; cursor:pointer; font-size:0.82rem; font-weight:600;">追加</button>
-  <button onclick="document.getElementById('installBanner').style.display='none'" style="background:none; border:none; color:#6e6e7e; cursor:pointer; font-size:1.2rem;">✕</button>
+  <button id="installBtn" class="btn btn-primary btn-sm btn-pill">追加</button>
+  <button onclick="document.getElementById('installBanner').style.display='none'" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;">✕</button>
 </div>
 
-<div id="offlineBanner" style="display:none; position:fixed; top:0; left:0; right:0; background:#c0392b; color:#fff; text-align:center; padding:8px; font-size:0.82rem; z-index:10000;">
-  📵 オフラインモード - 保存済みコンテンツを表示しています
-</div>
+<!-- ===== アプリコンテナ ===== -->
+<div class="app-container">
 
-<div class="header">
-  <h1>ภาษาไทย AI強化版 Personal</h1>
-  <p class="tagline">職場・会議・指示出しに使えるタイ語を習得</p>
-  <p class="subtitle">毎日少しずつ・無理なく継続</p>
-  <div class="streak-bar">
-    <span>🔥 連続学習</span>
-    <span class="streak-count" id="streakCount">1</span>
-    <span>日目</span>
-  </div>
-</div>
-
-<div class="tabs">
-  <button class="tab active" onclick="switchTab('home')">🏠 ホーム</button>
-  <button class="tab" onclick="switchTab('phrases')">💬 職場フレーズ</button>
-  <button class="tab" onclick="switchTab('vocab')">🃏 単語カード</button>
-  <button class="tab" onclick="switchTab('grammar')">📖 文法ポイント</button>
-  <button class="tab" onclick="switchTab('drill')">🎤 ドリル</button>
-  <button class="tab" onclick="switchTab('aigen')">✨ AI生成</button>
-  <button class="tab" onclick="switchTab('settings')">⚙️ 設定</button>
-</div>
-
-<!-- HOME -->
-<div class="section active" id="home">
-  <p class="section-title">🏠 ホーム</p>
-
-  <div class="home-progress">
-    <div class="home-prog-item">
-      <div class="home-prog-label">SRS管理中</div>
-      <div class="home-prog-val" id="homeSrsCount">0語</div>
-      <div class="prog-bar-wrap"><div class="prog-bar" id="vocabProgBar" style="width:0%"></div></div>
-    </div>
-    <div class="home-prog-item">
-      <div class="home-prog-label">今日の練習</div>
-      <div class="home-prog-val" id="homeTodayPractice">0枚</div>
-      <div class="prog-bar-wrap"><div class="prog-bar" id="phraseProgBar" style="width:0%"></div></div>
-    </div>
-    <div class="home-prog-item">
-      <div class="home-prog-label">文法パターン</div>
-      <div class="home-prog-val" id="homeGrammarProg">0/20</div>
-      <div class="prog-bar-wrap"><div class="prog-bar" id="grammarProgBar" style="width:0%"></div></div>
-    </div>
-  </div>
-
-  <div id="motivationMsg" style="text-align:center; font-size:0.82rem; color:#d4b87a; margin:8px 0; min-height:1.2em;"></div>
-
-  <div class="chart-section" id="chartSection">
-    <div class="chart-title">📊 学習履歴（7日間）</div>
-    <div class="chart-bars" id="learningChart"></div>
-  </div>
-
-  <div class="srs-review-box" id="srsReviewBox">
-    <div class="srs-title">🔥 今日の復習</div>
-    <div id="srsReviewList" class="srs-list">
-      <div class="srs-empty">復習すべき単語はありません 🎉</div>
-    </div>
-    <button class="srs-start-btn" id="srsStartBtn" onclick="startSrsReview()" style="display:none">▶ 復習開始</button>
-  </div>
-
-  <!-- 弱点分析 -->
-  <div class="srs-review-box" style="margin-top:16px;">
-    <div class="srs-title">📊 弱点分析</div>
-    <div id="weaknessStatus" style="font-size:0.82rem; color:var(--muted); padding:6px 0;">
-      学習を続けると弱点を自動分析できます
-    </div>
-    <button onclick="analyzeWeakness()" id="analyzeBtn" class="srs-start-btn" style="display:block; margin-top:8px;">🔍 1週間の弱点を分析する</button>
-
-    <div id="weaknessResult" style="display:none; margin-top:12px; flex-direction:column; gap:10px;">
-      <div style="background:var(--surface3); border:1px solid var(--accent2); border-radius:10px; padding:12px;">
-        <div style="font-size:0.72rem; color:var(--accent2); margin-bottom:6px;">🤖 Claude の分析結果</div>
-        <div id="weaknessAnalysisText" style="font-size:0.83rem; color:var(--text-dim); line-height:1.7; white-space:pre-wrap;"></div>
-      </div>
-      <div id="focusDrillBtn" style="display:none; text-align:center;">
-        <button onclick="startFocusDrill()" style="background:var(--red); color:#fff; border:none; border-radius:12px; padding:12px 28px; cursor:pointer; font-size:0.9rem; font-weight:600; width:100%;">🎯 弱点単語の集中ドリル開始</button>
+  <!-- ====== PAGE: ホーム ====== -->
+  <div class="page active" id="page-home">
+    <div class="home-greeting">
+      <div class="greeting-text" id="greetingText">สวัสดี！</div>
+      <div class="streak-badge">
+        <span class="streak-fire">🔥</span>
+        <span class="streak-number" id="streakNumber">0</span>
+        <span class="streak-label">日連続</span>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- WORKPLACE PHRASES -->
-<div class="section" id="phrases">
-  <p class="section-title">職場会話フレーズ（200フレーズ・音声付き）</p>
-
-  <div class="mode-switcher">
-    <button class="mode-btn active" onclick="setPhraseMode('learn')">📚 学習モード</button>
-    <button class="mode-btn" onclick="setPhraseMode('review')">🔄 復習モード</button>
-  </div>
-
-  <div class="flashcard-area">
-    <div class="category-select">
-      <button class="cat-btn active" onclick="setPhraseCategory('meeting', this)">🏭 会議</button>
-      <button class="cat-btn" onclick="setPhraseCategory('instruction', this)">🔍 指示</button>
-      <button class="cat-btn" onclick="setPhraseCategory('question', this)">☀️ 質問</button>
-      <button class="cat-btn" onclick="setPhraseCategory('polite', this)">🙏 敬語</button>
+    <!-- レベル表示 -->
+    <div class="level-card" id="levelCard">
+      <div class="level-name" id="levelName">Level 1: 挨拶マスター</div>
+      <div class="level-progress-bar">
+        <div class="level-progress-fill" id="levelProgressFill" style="width:0%"></div>
+      </div>
+      <div class="level-progress-text" id="levelProgressText">0 XP</div>
     </div>
 
-    <div class="flashcard phrase-card" id="phraseCard">
-      <div class="thai-word" id="phraseThai">–</div>
-      <button class="speaker-btn" id="speakerBtn" onclick="playAudio('phrase')">🔊</button>
-      <div class="romanji" id="phraseRomaji">–</div>
-      <div class="meaning show" id="phraseJP">–</div>
+    <!-- デイリーミッション -->
+    <div class="mission-section">
+      <div class="mission-header">
+        <h2>今日のミッション</h2>
+        <span class="mission-time">約5分</span>
+      </div>
+      <div class="mission-progress-dots" id="missionDots"></div>
+      <div class="mission-list" id="missionList"></div>
     </div>
 
-    <div class="card-counter" id="phraseCounter">1 / 50</div>
+    <!-- もっとやる？ -->
+    <div class="more-section">
+      <h3>もっとやる？</h3>
+      <div class="quick-actions">
+        <button class="quick-action-btn" onclick="openSubPage('vocab')">
+          <span class="quick-action-icon">🃏</span>
+          <span class="quick-action-label">単語カード</span>
+        </button>
+        <button class="quick-action-btn" onclick="openSubPage('phrases')">
+          <span class="quick-action-icon">💬</span>
+          <span class="quick-action-label">フレーズ</span>
+        </button>
+        <button class="quick-action-btn" onclick="openSubPage('listening')">
+          <span class="quick-action-icon">👂</span>
+          <span class="quick-action-label">リスニング</span>
+        </button>
+        <button class="quick-action-btn" onclick="openSubPage('matching')">
+          <span class="quick-action-icon">🎮</span>
+          <span class="quick-action-label">マッチング</span>
+        </button>
+        <button class="quick-action-btn" onclick="openSubPage('diary')">
+          <span class="quick-action-icon">📝</span>
+          <span class="quick-action-label">一言日記</span>
+        </button>
+        <button class="quick-action-btn" onclick="openSubPage('shadowing')">
+          <span class="quick-action-icon">🔊</span>
+          <span class="quick-action-label">シャドーイング</span>
+        </button>
+      </div>
+    </div>
 
-    <div class="fc-buttons" id="phraseButtons">
-      <button class="fc-btn skip" onclick="prevPhrase()">← 前</button>
-      <button class="fc-btn again" onclick="markPhrase(false)">もう一度</button>
-      <button class="fc-btn good" onclick="markPhrase(true)">覚えた ✓</button>
-      <button class="fc-btn skip" onclick="nextPhrase()">次 →</button>
+    <!-- 今週の成果 -->
+    <div class="weekly-stats" id="weeklyStats">
+      <div class="stat-item">
+        <div class="stat-value" id="weeklyVocab">0</div>
+        <div class="stat-label">📗 習得語</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="weeklyStreak">0</div>
+        <div class="stat-label">🔥 連続日</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="weeklyMissions">0</div>
+        <div class="stat-label">🎯 ミッション</div>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- VOCAB FLASHCARD -->
-<div class="section" id="vocab">
-  <p class="section-title">単語フラッシュカード（320単語）</p>
-
-  <div class="mode-switcher">
-    <button class="mode-btn active" onclick="setVocabMode('learn')">📚 学習モード</button>
-    <button class="mode-btn" onclick="setVocabMode('review')">🔄 復習モード</button>
+  <!-- ====== PAGE: ライブラリ ====== -->
+  <div class="page" id="page-library">
+    <h1 class="page-title">📚 ライブラリ</h1>
+    <div class="library-grid">
+      <div class="library-card" onclick="openSubPage('vocab')">
+        <div class="library-card-icon">🃏</div>
+        <div class="library-card-title">単語カード</div>
+        <div class="library-card-count" id="libVocabCount">320語</div>
+      </div>
+      <div class="library-card" onclick="openSubPage('phrases')">
+        <div class="library-card-icon">💬</div>
+        <div class="library-card-title">職場フレーズ</div>
+        <div class="library-card-count">200フレーズ</div>
+      </div>
+      <div class="library-card" onclick="openSubPage('grammar')">
+        <div class="library-card-icon">📖</div>
+        <div class="library-card-title">文法リファレンス</div>
+        <div class="library-card-count">20パターン</div>
+      </div>
+      <div class="library-card" onclick="openSubPage('vocab'); setCategory('custom', document.querySelector('.cat-btn[onclick*=\"custom\"]'))">
+        <div class="library-card-icon">⭐</div>
+        <div class="library-card-title">マイ単語</div>
+        <div class="library-card-count" id="libCustomCount">0件</div>
+      </div>
+    </div>
   </div>
 
-  <div class="flashcard-area">
-    <div class="category-select">
+  <!-- ====== PAGE: 練習 ====== -->
+  <div class="page" id="page-practice">
+    <h1 class="page-title">🎯 練習</h1>
+
+    <div class="practice-section-title">🆕 新機能</div>
+    <div class="practice-grid">
+      <div class="practice-mode-card new-badge" onclick="openSubPage('listening')">
+        <div class="practice-mode-icon">👂</div>
+        <div class="practice-mode-name">リスニング</div>
+        <div class="practice-mode-desc">3難易度・音声クイズ</div>
+      </div>
+      <div class="practice-mode-card new-badge" onclick="openSubPage('matching')">
+        <div class="practice-mode-icon">🎮</div>
+        <div class="practice-mode-name">マッチング</div>
+        <div class="practice-mode-desc">神経衰弱ゲーム</div>
+      </div>
+      <div class="practice-mode-card new-badge" onclick="openSubPage('diary')">
+        <div class="practice-mode-icon">📝</div>
+        <div class="practice-mode-name">一言日記</div>
+        <div class="practice-mode-desc">Claude添削付き</div>
+      </div>
+      <div class="practice-mode-card new-badge" onclick="openSubPage('shadowing')">
+        <div class="practice-mode-icon">🔊</div>
+        <div class="practice-mode-name">シャドーイング</div>
+        <div class="practice-mode-desc">真似て録音</div>
+      </div>
+      <div class="practice-mode-card new-badge" onclick="openSubPage('scanner')">
+        <div class="practice-mode-icon">📸</div>
+        <div class="practice-mode-name">身の回りスキャン</div>
+        <div class="practice-mode-desc">写真→タイ語</div>
+      </div>
+    </div>
+
+    <div class="practice-section-title">既存機能</div>
+    <div class="practice-grid">
+      <div class="practice-mode-card" onclick="openSubPage('speaking-drill')">
+        <div class="practice-mode-icon">🎤</div>
+        <div class="practice-mode-name">スピーキング</div>
+        <div class="practice-mode-desc">録音＋添削</div>
+      </div>
+      <div class="practice-mode-card" onclick="openSubPage('meeting-sim')">
+        <div class="practice-mode-icon">🤝</div>
+        <div class="practice-mode-name">会議シミュ</div>
+        <div class="practice-mode-desc">AIと会話練習</div>
+      </div>
+      <div class="practice-mode-card" onclick="openSubPage('ai-generator')">
+        <div class="practice-mode-icon">✨</div>
+        <div class="practice-mode-name">AIフレーズ生成</div>
+        <div class="practice-mode-desc">場面→3パターン</div>
+      </div>
+      <div class="practice-mode-card" onclick="openSubPage('grammar-drill')">
+        <div class="practice-mode-icon">📖</div>
+        <div class="practice-mode-name">文法ドリル</div>
+        <div class="practice-mode-desc">AI問題生成</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== PAGE: 進捗 ====== -->
+  <div class="page" id="page-progress">
+    <h1 class="page-title">📊 進捗</h1>
+
+    <!-- レベル詳細 -->
+    <div class="level-card" id="progressLevelCard" style="margin-bottom:16px;">
+      <div class="level-name" id="progressLevelName">Level 1: 挨拶マスター</div>
+      <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:8px;" id="progressLevelDesc">基本の挨拶・自己紹介ができる</div>
+      <div class="level-progress-bar">
+        <div class="level-progress-fill" id="progressLevelFill" style="width:0%"></div>
+      </div>
+      <div class="level-progress-text" id="progressLevelText">0 XP → 次のレベルまで 100 XP</div>
+    </div>
+
+    <!-- 統計 -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="statSrsCount">0</div>
+        <div class="stat-label">SRS管理</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statStreakCount">0</div>
+        <div class="stat-label">🔥 連続日</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statGrammarCount">0/20</div>
+        <div class="stat-label">文法習得</div>
+      </div>
+    </div>
+
+    <!-- 7日チャート -->
+    <div class="chart-section" id="chartSection" style="display:none;">
+      <div class="chart-title">📈 学習履歴（7日間）</div>
+      <div class="chart-bars" id="learningChart"></div>
+    </div>
+
+    <!-- SRS復習キュー -->
+    <div class="srs-box" id="srsBox" style="display:none;">
+      <div class="srs-box-title">🔄 今日の復習</div>
+      <div id="srsReviewList"><div class="srs-empty">復習すべき単語はありません 🎉</div></div>
+      <button class="btn btn-primary btn-full mt-8" id="srsStartBtn" onclick="startSrsReview()" style="display:none;">▶ 復習開始</button>
+    </div>
+
+    <!-- 弱点分析 -->
+    <div class="weakness-box">
+      <div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:8px;">📊 弱点分析（1週間）</div>
+      <div id="weaknessStatus" class="status-msg">学習を続けると弱点を自動分析できます</div>
+      <button class="btn btn-accent btn-full mt-8" onclick="analyzeWeakness()" id="analyzeBtn">🔍 弱点を分析する</button>
+      <div class="weakness-result" id="weaknessResult" style="margin-top:12px;">
+        <div class="ai-analysis-box">
+          <div class="ai-analysis-label">🤖 Claude の分析結果</div>
+          <div class="ai-analysis-text" id="weaknessAnalysisText"></div>
+        </div>
+        <div id="focusDrillBtn" style="display:none;">
+          <button class="btn btn-primary btn-full" onclick="startFocusDrill()">🎯 弱点単語を集中練習</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== PAGE: 設定 ====== -->
+  <div class="page" id="page-settings">
+    <h1 class="page-title">⚙️ 設定</h1>
+
+    <!-- 音声設定 -->
+    <div class="settings-section">
+      <div class="settings-section-title">音声設定</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">自動再生</div>
+          <div class="settings-desc">カード表示時に自動で音声再生</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="autoPlayToggle" onchange="toggleAutoPlay(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">話速</div>
+        <div class="speed-btns">
+          <button class="speed-btn" onclick="setSpeechRate(0.5, this)">🐢 遅い</button>
+          <button class="speed-btn active" onclick="setSpeechRate(0.8, this)">普通</button>
+          <button class="speed-btn" onclick="setSpeechRate(1.0, this)">速い</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 表示設定 -->
+    <div class="settings-section">
+      <div class="settings-section-title">表示設定</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">ダークモード</div>
+          <div class="settings-desc">手動でダーク/ライト切替</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- APIキー -->
+    <div class="settings-section">
+      <div class="settings-section-title">APIキー管理</div>
+      <div class="api-key-row">
+        <div class="api-key-label">
+          <span>Google Cloud TTS</span>
+          <span class="api-key-status" id="googleKeyStatus">未設定</span>
+        </div>
+        <div class="api-key-input-row">
+          <input type="password" class="api-key-input" id="googleKeyInput" placeholder="AIza...">
+          <button class="btn btn-primary btn-sm" onclick="saveApiKey('google')">保存</button>
+        </div>
+      </div>
+      <div class="api-key-row">
+        <div class="api-key-label">
+          <span>OpenAI (Whisper / TTS)</span>
+          <span class="api-key-status" id="openaiKeyStatus">未設定</span>
+        </div>
+        <div class="api-key-input-row">
+          <input type="password" class="api-key-input" id="openaiKeyInput" placeholder="sk-...">
+          <button class="btn btn-primary btn-sm" onclick="saveApiKey('openai')">保存</button>
+        </div>
+      </div>
+      <div class="api-key-row">
+        <div class="api-key-label">
+          <span>Claude API</span>
+          <span class="api-key-status" id="claudeKeyStatus">未設定</span>
+        </div>
+        <div class="api-key-input-row">
+          <input type="password" class="api-key-input" id="claudeKeyInput" placeholder="sk-ant-...">
+          <button class="btn btn-primary btn-sm" onclick="saveApiKey('claude')">保存</button>
+        </div>
+      </div>
+      <div style="padding:10px 16px;display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="showApiKeys()">👁 表示/非表示</button>
+        <button class="btn btn-outline btn-sm" style="color:var(--error);border-color:var(--error);" onclick="clearApiKeys()">🗑 全削除</button>
+      </div>
+    </div>
+
+    <!-- Firebase同期 -->
+    <div class="settings-section">
+      <div class="settings-section-title">データ同期</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label" id="firebaseUserName">未ログイン</div>
+          <div class="settings-desc">Googleアカウントで端末間同期</div>
+        </div>
+        <button class="btn btn-primary btn-sm btn-pill" id="firebaseLoginBtn" onclick="window.firebaseLogin && window.firebaseLogin()">ログイン</button>
+      </div>
+      <div style="padding:10px 16px;display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="window.firebaseUpload && window.firebaseUpload()">⬆ アップロード</button>
+        <button class="btn btn-outline btn-sm" onclick="window.firebaseDownload && window.firebaseDownload()">⬇ ダウンロード</button>
+        <button class="btn btn-outline btn-sm" onclick="window.firebaseLogout && window.firebaseLogout()">ログアウト</button>
+      </div>
+      <div class="sync-status" id="syncStatus" style="padding:0 16px 10px;"></div>
+    </div>
+  </div>
+
+  <!-- ===================================================
+       サブページ
+       =================================================== -->
+
+  <!-- ====== SUBPAGE: 単語フラッシュカード ====== -->
+  <div class="page sub-page" id="page-vocab">
+    <div class="sub-page-header">
+      <button class="back-btn" onclick="goBack()">← 戻る</button>
+      <h2 class="sub-page-title">🃏 単語カード</h2>
+    </div>
+
+    <div class="mode-btns">
+      <button class="mode-btn active" onclick="setVocabMode('learn', this)">📚 学習</button>
+      <button class="mode-btn" onclick="setVocabMode('review', this)">🔄 復習</button>
+    </div>
+
+    <div class="cat-btns">
       <button class="cat-btn active" onclick="setCategory('work', this)">🏭 職場</button>
       <button class="cat-btn" onclick="setCategory('quality', this)">🔍 品質</button>
       <button class="cat-btn" onclick="setCategory('daily', this)">☀️ 日常</button>
@@ -157,419 +377,619 @@
       <button class="cat-btn" onclick="setCategory('custom', this)">⭐ マイ単語</button>
     </div>
 
-    <!-- FILTER ROW -->
-    <div class="filter-section">
-      <div class="filter-row">
-        <span class="filter-label">⭐ 頻度：</span>
-        <button class="filter-btn freq-btn active" onclick="setFreqFilter('all', this)">全て</button>
-        <button class="filter-btn freq-btn" onclick="setFreqFilter('high', this)">🔥 超頻出</button>
-        <button class="filter-btn freq-btn" onclick="setFreqFilter('medium', this)">📗 頻出</button>
-        <button class="filter-btn freq-btn" onclick="setFreqFilter('weak', this)">⚠️ 苦手</button>
-      </div>
-      <div class="filter-row">
-        <span class="filter-label">🏷 シーン：</span>
-        <button class="filter-btn scene-btn active" onclick="setSceneFilter('all', this)">全て</button>
-        <button class="filter-btn scene-btn" onclick="setSceneFilter('朝礼', this)">☀️ 朝礼</button>
-        <button class="filter-btn scene-btn" onclick="setSceneFilter('QC', this)">🔍 QC</button>
-        <button class="filter-btn scene-btn" onclick="setSceneFilter('不良対応', this)">⚠️ 不良</button>
-        <button class="filter-btn scene-btn" onclick="setSceneFilter('指示', this)">📢 指示</button>
-        <button class="filter-btn scene-btn" onclick="setSceneFilter('会議', this)">🤝 会議</button>
-        <button class="filter-btn scene-btn" onclick="setSceneFilter('日常', this)">💬 日常</button>
-      </div>
+    <div class="filter-btns">
+      <button class="filter-btn active" onclick="setFreqFilter('all', this)">全て</button>
+      <button class="filter-btn" onclick="setFreqFilter('high', this)">🔴 高頻度</button>
+      <button class="filter-btn" onclick="setFreqFilter('medium', this)">🟡 中頻度</button>
+      <button class="filter-btn" onclick="setFreqFilter('weak', this)">⚠️ 苦手</button>
     </div>
+
+    <div class="filter-btns" id="sceneFilterBtns">
+      <button class="filter-btn active" onclick="setSceneFilter('all', this)">全シーン</button>
+      <button class="filter-btn" onclick="setSceneFilter('朝礼', this)">☀️ 朝礼</button>
+      <button class="filter-btn" onclick="setSceneFilter('QC', this)">🔍 QC</button>
+      <button class="filter-btn" onclick="setSceneFilter('不良対応', this)">⚠️ 不良</button>
+      <button class="filter-btn" onclick="setSceneFilter('指示', this)">📢 指示</button>
+      <button class="filter-btn" onclick="setSceneFilter('会議', this)">🤝 会議</button>
+    </div>
+
+    <div class="card-counter" id="cardCounter">0 / 0</div>
 
     <div class="flashcard" id="flashcard" onclick="showMeaning()">
-      <button class="speaker-btn" onclick="event.stopPropagation(); playAudio('vocab')">🔊</button>
-      <div class="thai-word" id="fcThai">–</div>
-      <div class="romanji" id="fcRomaji">–</div>
-      <div class="meaning" id="fcMeaning">–</div>
-      <div class="example" id="fcExample"></div>
-      <div class="tap-hint" id="tapHint">タップして意味を表示</div>
+      <div class="fc-thai" id="fcThai">–</div>
+      <div class="fc-romaji" id="fcRomaji">–</div>
+      <div class="fc-meaning" id="fcMeaning"></div>
+      <div class="fc-example" id="fcExample"></div>
+      <div class="tap-hint" id="tapHint">タップで意味を表示</div>
     </div>
 
-    <div class="card-counter" id="cardCounter">1 / 10</div>
-
-    <div class="fc-buttons" id="fcButtons" style="display:none">
-      <button class="fc-btn unknown-btn" onclick="nextCard('unknown')">😕 知らない</button>
-      <button class="fc-btn fuzzy-btn" onclick="nextCard('fuzzy')">🤔 あやしい</button>
-      <button class="fc-btn good" onclick="nextCard('know')">✅ 知ってる</button>
-    </div>
-    <div id="fcNext" style="display:none">
-      <button class="fc-btn skip" onclick="startCards()">もう一周する</button>
+    <div class="fc-rating-btns" id="fcButtons" style="display:none;">
+      <button class="fc-btn btn-unknown" onclick="nextCard('unknown')">😕 知らない</button>
+      <button class="fc-btn btn-fuzzy" onclick="nextCard('fuzzy')">🤔 あやしい</button>
+      <button class="fc-btn btn-know" onclick="nextCard('know')">✅ 知ってる</button>
     </div>
 
-    <!-- Claude ヒントエリア -->
-    <div id="claudeTipArea" style="display:none; width:100%; max-width:440px; background:var(--surface2); border:1px solid var(--accent2); border-radius:12px; padding:14px 16px; margin-top:4px;">
-      <div style="font-size:0.75rem; color:var(--accent2); margin-bottom:8px;">🤖 Claudeからの覚え方ヒント</div>
-      <div id="claudeTipText" style="font-size:0.84rem; color:var(--text-dim); line-height:1.7; white-space:pre-wrap;"></div>
+    <button class="fc-next-btn" id="fcNext" onclick="nextCard('know')" style="display:none;">次へ →</button>
+
+    <div class="claude-tip" id="claudeTipArea">
+      <div style="font-size:0.68rem;color:var(--accent);font-weight:700;margin-bottom:4px;">🤖 Claude の覚え方ヒント</div>
+      <div id="claudeTipText"></div>
     </div>
-
-  </div>
-</div>
-
-<!-- GRAMMAR -->
-<div class="section" id="grammar">
-  <p class="section-title">📖 文法ポイント</p>
-
-  <!-- モード切り替え -->
-  <div class="mode-btns" style="margin-bottom:16px;">
-    <button class="mode-btn active" id="grammarRefBtn" onclick="switchGrammarMode('ref', this)">📚 文法リファレンス</button>
-    <button class="mode-btn" id="grammarDrillBtn" onclick="switchGrammarMode('drill', this)">🤖 AIドリル</button>
   </div>
 
-  <!-- 文法リファレンス（既存） -->
-  <div id="grammarRefPanel">
-    <div class="grammar-list" id="grammarList"></div>
+  <!-- ====== SUBPAGE: 職場フレーズ ====== -->
+  <div class="page sub-page" id="page-phrases">
+    <div class="sub-page-header">
+      <button class="back-btn" onclick="goBack()">← 戻る</button>
+      <h2 class="sub-page-title">💬 職場フレーズ</h2>
+    </div>
+
+    <div class="mode-btns">
+      <button class="mode-btn active" onclick="setPhraseMode('learn')">📚 学習</button>
+      <button class="mode-btn" onclick="setPhraseMode('review')">🔄 復習</button>
+    </div>
+
+    <div class="cat-btns">
+      <button class="cat-btn active" onclick="setPhraseCategory('meeting', this)">🤝 会議</button>
+      <button class="cat-btn" onclick="setPhraseCategory('instruction', this)">📢 指示</button>
+      <button class="cat-btn" onclick="setPhraseCategory('question', this)">❓ 質問</button>
+      <button class="cat-btn" onclick="setPhraseCategory('polite', this)">🙏 敬語</button>
+    </div>
+
+    <div class="card-counter" id="phraseCounter">0 / 0</div>
+
+    <div class="flashcard" id="phraseCard" onclick="showPhraseMeaning()">
+      <div class="fc-thai" id="phraseThai">–</div>
+      <div class="fc-romaji" id="phraseRomaji">–</div>
+      <div class="fc-meaning" id="phraseJP"></div>
+      <div class="tap-hint" id="phraseTapHint">タップで意味を表示</div>
+    </div>
+
+    <div class="fc-rating-btns" id="phraseButtons" style="display:none;">
+      <button class="fc-btn btn-unknown" onclick="markPhrase(false)">もう一度</button>
+      <button class="fc-btn btn-know" onclick="markPhrase(true)">覚えた ✓</button>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn btn-outline btn-sm" onclick="prevPhrase()">← 前</button>
+      <button class="btn btn-outline btn-sm" style="flex:1;" onclick="playAudio('phrase')">🔊 発音</button>
+      <button class="btn btn-outline btn-sm" onclick="nextPhrase()">次 →</button>
+    </div>
   </div>
 
-  <!-- Claude文法ドリル（新規） -->
-  <div id="grammarDrillPanel" style="display:none;">
-
-    <!-- 文法パターン選択 -->
-    <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px;">
-      <div style="font-size:0.78rem; color:var(--muted); margin-bottom:10px;">練習する文法パターンを選んでください</div>
-      <div id="grammarDrillSelector" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+  <!-- ====== SUBPAGE: 文法リファレンス ====== -->
+  <div class="page sub-page" id="page-grammar">
+    <div class="sub-page-header">
+      <button class="back-btn" onclick="goBack()">← 戻る</button>
+      <h2 class="sub-page-title">📖 文法リファレンス</h2>
     </div>
 
-    <!-- 選択中パターン表示 -->
-    <div id="grammarDrillInfo" style="display:none; background:var(--surface2); border-left:3px solid var(--accent); border-radius:8px; padding:12px 14px; margin-bottom:14px;">
-      <div style="font-size:0.75rem; color:var(--accent); margin-bottom:4px;">練習中のパターン</div>
-      <div id="grammarDrillPatternName" style="font-size:0.9rem; font-weight:600;"></div>
-      <div id="grammarDrillPatternDesc" style="font-size:0.8rem; color:var(--muted); margin-top:2px;"></div>
+    <div class="mode-btns">
+      <button class="mode-btn active" onclick="switchGrammarMode('ref', this)">📖 参照</button>
+      <button class="mode-btn" onclick="switchGrammarMode('drill', this)">📝 ドリル</button>
     </div>
 
-    <!-- 問題エリア -->
-    <div id="grammarDrillQuestionArea" style="display:none; flex-direction:column; gap:14px;">
+    <!-- 参照パネル -->
+    <div id="grammarRefPanel">
+      <div id="grammarList"></div>
+    </div>
 
-      <!-- 問題カード -->
-      <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:18px; text-align:center;">
-        <div style="font-size:0.72rem; color:var(--muted); margin-bottom:10px;">📝 タイ語で答えてください</div>
-        <div id="grammarDrillQ" style="font-size:1.05rem; color:var(--text); line-height:1.6; min-height:2em;"></div>
-        <div id="grammarDrillHint" style="font-size:0.78rem; color:var(--accent); margin-top:8px;"></div>
-      </div>
-
-      <!-- 回答入力 -->
-      <div style="display:flex; gap:8px;">
-        <input type="text" id="grammarDrillAnswer" placeholder="タイ語で入力..." style="flex:1; background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:12px 14px; color:var(--text); font-size:0.95rem; font-family:'Sarabun',sans-serif;">
-        <button onclick="submitGrammarDrill()" style="background:var(--accent); color:#fff; border:none; border-radius:10px; padding:12px 18px; cursor:pointer; font-size:0.85rem; white-space:nowrap;">送信 →</button>
-      </div>
-
-      <!-- 音声で答えるボタン -->
-      <div style="text-align:center;">
-        <button id="grammarVoiceBtn" onclick="toggleGrammarVoice()" style="background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:8px 18px; color:var(--text-dim); cursor:pointer; font-size:0.82rem;">🎙 音声で答える</button>
-      </div>
-
-      <!-- Claude添削結果 -->
-      <div id="grammarDrillResult" style="display:none; flex-direction:column; gap:10px;">
-        <div style="background:var(--surface2); border:1px solid var(--accent2); border-radius:12px; padding:14px;">
-          <div style="font-size:0.72rem; color:var(--accent2); margin-bottom:6px;">🤖 Claudeの添削</div>
-          <div id="grammarDrillFeedback" style="font-size:0.84rem; color:var(--text-dim); line-height:1.7; white-space:pre-wrap;"></div>
+    <!-- ドリルパネル -->
+    <div id="grammarDrillPanel" style="display:none;">
+      <div id="grammarDrillStartArea">
+        <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:10px;">パターンを選んでドリルを開始してください</p>
+        <div class="drill-selector" id="grammarDrillSelector"></div>
+        <div id="grammarDrillInfo" style="display:none;background:var(--surface-dim);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;">
+          <div style="font-size:0.82rem;font-weight:700;color:var(--text);" id="grammarDrillPatternName"></div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;" id="grammarDrillPatternDesc"></div>
         </div>
-        <div style="background:var(--surface2); border:1px solid var(--green); border-radius:12px; padding:14px;">
-          <div style="font-size:0.72rem; color:var(--green); margin-bottom:6px;">✅ お手本</div>
-          <div id="grammarDrillModel" style="font-size:1rem; color:var(--thai); font-family:'Sarabun',sans-serif; margin-bottom:4px;"></div>
-          <button onclick="playGrammarModel()" style="margin-top:6px; background:var(--surface3); border:1px solid var(--border); border-radius:8px; padding:6px 14px; color:var(--text); cursor:pointer; font-size:0.78rem;">🔊 聞く</button>
-        </div>
-        <div style="display:flex; gap:10px; justify-content:center;">
-          <button onclick="nextGrammarDrill()" style="background:var(--accent); color:#fff; border:none; border-radius:10px; padding:10px 24px; cursor:pointer; font-weight:600;">次の問題 →</button>
-        </div>
+        <button class="btn btn-primary btn-full" onclick="startGrammarDrill()" id="grammarDrillStartBtn" disabled>▶ ドリル開始</button>
       </div>
 
-      <div id="grammarDrillCounter" style="text-align:center; font-size:0.78rem; color:var(--muted);"></div>
-    </div>
-
-    <!-- スタートボタン -->
-    <div id="grammarDrillStartArea" style="text-align:center; padding:20px;">
-      <div style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">パターンを選んでスタート</div>
-      <button onclick="startGrammarDrill()" id="grammarDrillStartBtn" style="background:var(--accent); color:#fff; border:none; border-radius:12px; padding:14px 32px; cursor:pointer; font-size:1rem; font-weight:600;" disabled>🚀 ドリル開始</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- AI PHRASE GENERATOR -->
-<div class="section" id="aigen">
-  <p class="section-title">✨ AI フレーズ生成</p>
-
-  <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; margin-bottom:12px;">
-    <div style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;">
-      💡 どんな場面でタイ語を使いたいか、日本語で入力してください
-    </div>
-    <textarea id="aigenInput"
-      placeholder="例：品質不良を部下に指摘したい&#10;納期の遅れを上司に報告したい&#10;今日の作業手順を説明したい"
-      style="width:100%; background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:12px; color:var(--text); font-size:0.9rem; min-height:80px; resize:vertical; font-family:'Noto Sans JP',sans-serif; box-sizing:border-box;"></textarea>
-    <button onclick="generatePhrases()" id="aigenBtn"
-      style="width:100%; margin-top:10px; background:var(--accent); color:#fff; border:none; border-radius:12px; padding:14px; cursor:pointer; font-size:0.95rem; font-weight:600;">
-      ✨ タイ語フレーズを生成する
-    </button>
-  </div>
-
-  <div id="aigenStatus" style="display:none; text-align:center; font-size:0.82rem; color:var(--muted); margin:8px 0;"></div>
-
-  <div id="aigenResult" style="display:none; flex-direction:column; gap:12px;"></div>
-
-  <div style="background:var(--surface2); border-radius:12px; padding:12px 14px; margin-top:16px;">
-    <div style="font-size:0.75rem; color:var(--muted); margin-bottom:6px;">⭐ 保存済みマイ単語</div>
-    <div id="aigenSavedCount" style="font-size:0.88rem; color:var(--text-dim);">0 件</div>
-    <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">単語カードタブ → マイ単語 で復習できます</div>
-  </div>
-</div>
-
-<!-- SETTINGS -->
-<div class="section" id="settings">
-  <p class="section-title">⚙️ 設定</p>
-  <div class="settings-list">
-
-    <!-- クラウド同期 -->
-    <div class="setting-item" style="flex-direction:column; align-items:flex-start; gap:12px;">
-      <div class="setting-info">
-        <div class="setting-label">☁️ クラウド同期</div>
-        <div class="setting-desc">Googleアカウントでログインすると、学習データが端末間で同期されます</div>
-      </div>
-      <div id="syncStatusArea" style="width:100%;">
-        <div id="syncLoggedOut" style="display:flex; flex-direction:column; gap:10px;">
-          <button onclick="firebaseLogin()" style="background:#4285f4; color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-size:0.88rem; font-weight:600; display:flex; align-items:center; gap:8px; width:fit-content;">
-            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#fff" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></svg>
-            Googleでログイン
-          </button>
+      <div class="drill-question-area" id="grammarDrillQuestionArea" style="display:none;">
+        <div class="drill-q-text" id="grammarDrillQ"></div>
+        <div class="drill-hint" id="grammarDrillHint"></div>
+        <div style="font-size:0.72rem;color:var(--text-muted);text-align:right;" id="grammarDrillCounter"></div>
+        <input type="text" class="drill-answer-input" id="grammarDrillAnswer" placeholder="タイ語で入力...">
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" style="flex:1;" onclick="submitGrammarDrill()">送信 →</button>
+          <button class="btn btn-outline" id="grammarVoiceBtn" onclick="toggleGrammarVoice()">🎙 音声</button>
         </div>
-        <div id="syncLoggedIn" style="display:none; flex-direction:column; gap:10px;">
-          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <img id="syncUserAvatar" src="" style="width:32px; height:32px; border-radius:50%;" onerror="this.style.display='none'">
-            <div>
-              <div id="syncUserName" style="font-size:0.88rem; color:var(--text); font-weight:600;"></div>
-              <div id="syncUserEmail" style="font-size:0.75rem; color:var(--muted);"></div>
-            </div>
+        <div class="drill-result" id="grammarDrillResult">
+          <div style="font-size:0.68rem;color:var(--text-muted);">お手本</div>
+          <div style="font-family:'Sarabun',sans-serif;color:var(--thai);font-size:1rem;" id="grammarDrillModel"></div>
+          <div style="font-size:0.78rem;color:var(--text-secondary);" id="grammarDrillFeedback"></div>
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <button class="btn btn-outline btn-sm" onclick="playGrammarModel()">🔊 お手本を聞く</button>
+            <button class="btn btn-primary btn-sm" onclick="nextGrammarDrill()">次の問題 →</button>
           </div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button onclick="firebaseUpload()" style="background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 14px; cursor:pointer; font-size:0.82rem;">⬆ この端末のデータを保存</button>
-            <button onclick="firebaseDownload()" style="background:var(--surface3); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 14px; cursor:pointer; font-size:0.82rem;">⬇ クラウドから読み込み</button>
-            <button onclick="firebaseLogout()" style="background:var(--surface3); color:var(--muted); border:1px solid var(--border); border-radius:8px; padding:8px 14px; cursor:pointer; font-size:0.82rem;">ログアウト</button>
-          </div>
-          <div id="syncMessage" style="font-size:0.78rem; color:var(--accent); min-height:1em;"></div>
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="setting-item">
-      <div class="setting-info">
-        <div class="setting-label">🔊 音声自動再生</div>
-        <div class="setting-desc">カード表示時に自動で音声を再生します</div>
+  <!-- ====== SUBPAGE: スピーキングドリル ====== -->
+  <div class="page sub-page" id="page-speaking-drill">
+    <div class="sub-page-header">
+      <button class="back-btn" onclick="goBack()">← 戻る</button>
+      <h2 class="sub-page-title">🎤 スピーキングドリル</h2>
+    </div>
+
+    <div class="mode-btns" style="margin-bottom:12px;">
+      <button class="mode-btn active" onclick="switchDrillMode('drill', this)">🎤 ドリル</button>
+      <button class="mode-btn" onclick="switchDrillMode('sim', this)">🤝 会議シミュ</button>
+    </div>
+
+    <!-- ドリルパネル -->
+    <div id="drillPanel">
+      <div class="cat-btns">
+        <button class="cat-btn active" onclick="setDrillScene('all', this)">全シーン</button>
+        <button class="cat-btn" onclick="setDrillScene('morning', this)">☀️ 朝礼</button>
+        <button class="cat-btn" onclick="setDrillScene('defect', this)">⚠️ 不良</button>
+        <button class="cat-btn" onclick="setDrillScene('instruction', this)">📢 指示</button>
+        <button class="cat-btn" onclick="setDrillScene('safety', this)">⛑ 安全</button>
       </div>
-      <label class="toggle-switch">
-        <input type="checkbox" id="autoPlayToggle" onchange="toggleAutoPlay(this.checked)">
-        <span class="toggle-slider"></span>
+
+      <div class="drill-card">
+        <div class="drill-scene-tag" id="drillSceneTag">☀️ 朝礼</div>
+        <div class="drill-prompt-jp" id="drillPromptJP">読み込み中...</div>
+        <div class="drill-counter" id="drillCounter">1 / 17</div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button class="btn btn-outline btn-sm" onclick="prevDrill()">← 前</button>
+        <button class="btn btn-outline btn-sm" style="flex:1;" onclick="nextDrill()">次 →</button>
+      </div>
+
+      <div style="text-align:center;margin-bottom:8px;">
+        <button class="record-btn" id="drillRecordBtn" onclick="toggleDrillRecord()">🎙</button>
+        <div class="record-status" id="drillRecordStatus">ボタンを押してタイ語で話す</div>
+      </div>
+
+      <div class="drill-result-area" id="drillResultArea">
+        <div class="result-row">
+          <div class="result-row-label">あなたの発話</div>
+          <div class="result-row-value" id="drillUserText">–</div>
+        </div>
+        <div class="result-row">
+          <div class="result-row-label">フィードバック</div>
+          <div class="result-row-value" id="drillFeedback" style="font-family:'Noto Sans JP',sans-serif;">–</div>
+        </div>
+        <div class="result-row">
+          <div class="result-row-label">お手本タイ語</div>
+          <div class="result-row-value" id="drillModelThai">–</div>
+        </div>
+        <div class="result-row">
+          <div class="result-row-label">読み方</div>
+          <div class="result-row-value" style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:var(--text-muted);" id="drillModelRomaji">–</div>
+        </div>
+        <div class="result-row">
+          <div class="result-row-label">日本語訳</div>
+          <div class="result-row-value" id="drillModelJP">–</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="playDrillModel()">🔊 お手本を聞く</button>
+      </div>
+    </div>
+
+    <!-- 会議シミュパネル（旧UIと統合） -->
+    <div id="simPanel" style="display:none;">
+      <div class="sim-scene-btns">
+        <button class="sim-scene-btn" onclick="startSim('morning')">☀️ 朝礼</button>
+        <button class="sim-scene-btn" onclick="startSim('defect')">⚠️ 不良対応</button>
+        <button class="sim-scene-btn" onclick="startSim('delivery')">📦 納期確認</button>
+        <button class="sim-scene-btn" onclick="startSim('safety')">⛑ 安全指示</button>
+      </div>
+      <div class="sim-conversation" id="simConversation">
+        <div style="text-align:center;color:var(--text-muted);font-size:0.85rem;padding:20px 0;">上のシーンを選ぶと会話が始まります</div>
+      </div>
+      <div style="text-align:center;margin-bottom:8px;">
+        <button class="record-btn" id="simRecordBtn" onclick="toggleSimRecord()" disabled>🎙</button>
+        <div class="record-status" id="simRecordStatus">シーンを選んでください</div>
+      </div>
+      <button class="btn btn-outline btn-full btn-sm mt-8" onclick="resetSim()">🔄 会話をリセット</button>
+    </div>
+  </div>
+
+  <!-- ====== SUBPAGE: 会議シミュレーション（旧UIへのリダイレクト） ====== -->
+  <div class="page sub-page" id="page-meeting-sim">
+    <div class="sub-page-header">
+      <button class="back-btn" onclick="goBack()">← 戻る</button>
+      <h2 class="sub-page-title">🤝 会議シミュレーション</h2>
+    </div>
+    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px;">スピーキングドリルの「会議シミュ」タブを使用してください。</p>
+    <button class="btn btn-primary btn-full" onclick="openSubPage('speaking-drill'); switchDrillMode('sim', document.querySelectorAll('#drillPanel')[0]?.previousElementSibling?.querySelector('.mode-btn:last-child'))">🤝 会議シミュへ</button>
+  </div>
+
+  <!-- ====== SUBPAGE: AIフレーズ生成 ====== -->
+  <div class="page sub-page" id="page-ai-generator">
+    <div class="sub-page-header">
+      <button class="back-btn" onclick="goBack()">← 戻る</button>
+      <h2 class="sub-page-title">✨ AIフレーズ生成</h2>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:8px;">どんな場面で使いたいですか？</p>
+      <input type="text" id="aigenInput" class="drill-answer-input" placeholder="例：部品の検査を頼む、欠陥品を報告する..." style="margin-bottom:8px;">
+      <button class="btn btn-primary btn-full" id="aigenBtn" onclick="generatePhrases()">✨ タイ語フレーズを生成する</button>
+    </div>
+
+    <div id="aigenStatus" class="status-msg loading" style="display:none;"></div>
+
+    <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:8px;">保存済み: <span id="aigenSavedCount">0 件</span></div>
+
+    <div class="aigen-result" id="aigenResult"></div>
+  </div>
+
+  <!-- ====== SUBPAGE: 文法AIドリル（旧UIではgrammar内に統合） ====== -->
+  <div class="page sub-page" id="page-grammar-drill">
+    <div class="sub-page-header">
+      <button class="back-btn" onclick="goBack()">← 戻る</button>
+      <h2 class="sub-page-title">📖 文法AIドリル</h2>
+    </div>
+    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px;">文法リファレンスの「ドリル」タブを使用してください。</p>
+    <button class="btn btn-primary btn-full" onclick="openSubPage('grammar'); switchGrammarMode('drill', document.querySelector('#grammarDrillPanel')?.previousElementSibling?.querySelector('.mode-btn:last-child'))">📖 文法ドリルへ</button>
+  </div>
+
+  <!-- ====== SUBPAGE: リスニングチャレンジ ====== -->
+  <div class="page sub-page" id="page-listening">
+    <div class="sub-page-header">
+      <button class="back-btn" onclick="goBack()">← 戻る</button>
+      <h2 class="sub-page-title">👂 リスニングチャレンジ</h2>
+    </div>
+
+    <!-- 難易度選択 -->
+    <div id="listeningSetup">
+      <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:12px;">難易度を選んでください</p>
+      <div class="difficulty-cards">
+        <button class="diff-card" onclick="startListening('beginner')">
+          <span class="diff-icon">🟢</span>
+          <div>
+            <div class="diff-name">初級</div>
+            <div class="diff-desc">単語を聞いて4択で回答</div>
+          </div>
+        </button>
+        <button class="diff-card" onclick="startListening('intermediate')">
+          <span class="diff-icon">🟡</span>
+          <div>
+            <div class="diff-name">中級</div>
+            <div class="diff-desc">フレーズを聞いて意味を選ぶ</div>
+          </div>
+        </button>
+        <button class="diff-card" onclick="startListening('advanced')">
+          <span class="diff-icon">🔴</span>
+          <div>
+            <div class="diff-name">上級</div>
+            <div class="diff-desc">聞いてローマ字で書き取る</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- クイズ画面 -->
+    <div id="listeningQuiz" style="display:none;">
+      <div class="listening-card">
+        <div class="listening-icon">🔊</div>
+        <button class="listening-play-btn" id="listeningPlayBtn" onclick="playListeningAudio()">▶ もう一度聞く</button>
+        <div class="listening-speed-control">
+          <button class="speed-control-btn active" onclick="setListeningSpeed('normal', this)">▶ 普通</button>
+          <button class="speed-control-btn" onclick="setListeningSpeed('slow', this)">🐢 ゆっくり</button>
+        </div>
+      </div>
+
+      <div class="listening-counter" id="listeningCounter">1 / 10</div>
+
+      <!-- 4択 (初級・中級) -->
+      <div id="listeningChoices" class="quiz-choices"></div>
+
+      <!-- 書き取り (上級) -->
+      <div id="listeningInput" style="display:none;">
+        <div class="dictation-row">
+          <input type="text" id="listeningAnswer" class="dictation-input" placeholder="ローマ字で入力...">
+          <button class="btn btn-primary" onclick="submitListeningAnswer()">送信</button>
+        </div>
+      </div>
+
+      <!-- フィードバック -->
+      <div class="listening-feedback" id="listeningFeedback"></div>
+
+      <button class="btn btn-primary btn-full" id="listeningNextBtn" style="display:none;" onclick="nextListeningQuestion()">次へ →</button>
+    </div>
+
+    <!-- 結果画面 -->
+    <div id="listeningResult" style="display:none;text-align:center;padding:20px 0;">
+      <div class="result-score" id="listeningScoreText">0 / 10</div>
+      <div class="result-message" id="listeningResultMsg">お疲れさまでした！</div>
+      <div class="result-mistakes" id="listeningMistakes" style="display:none;text-align:left;">
+        <div style="font-size:0.8rem;font-weight:700;color:var(--text-secondary);margin-bottom:8px;">間違えた問題</div>
+      </div>
+      <div class="result-btn-row" style="justify-content:center;">
+        <button class="btn btn-outline" onclick="retryListening()">もう一度</button>
+        <button class="btn btn-primary" onclick="goBack()">戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SUBPAGE: 単語マッチング ====== -->
+  <div class="page sub-page" id="page-matching">
+    <div class="sub-page-header">
+      <button class="back-btn" onclick="goBack()">← 戻る</button>
+      <h2 class="sub-page-title">🎮 単語マッチング</h2>
+    </div>
+
+    <!-- 設定画面 -->
+    <div id="matchingSetup">
+      <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:10px;">カテゴリを選択</p>
+      <div class="cat-btns" style="margin-bottom:14px;">
+        <button class="cat-btn active" onclick="setMatchCategory('work', this)">🏭 職場</button>
+        <button class="cat-btn" onclick="setMatchCategory('quality', this)">🔍 品質</button>
+        <button class="cat-btn" onclick="setMatchCategory('daily', this)">☀️ 日常</button>
+        <button class="cat-btn" onclick="setMatchCategory('polite', this)">🙏 敬語</button>
+      </div>
+      <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:10px;">難易度を選択</p>
+      <div class="difficulty-cards">
+        <button class="diff-card" onclick="startMatching(4)">
+          <span class="diff-icon">🟢</span>
+          <div>
+            <div class="diff-name">初級</div>
+            <div class="diff-desc">4ペア（8枚）</div>
+          </div>
+        </button>
+        <button class="diff-card" onclick="startMatching(6)">
+          <span class="diff-icon">🟡</span>
+          <div>
+            <div class="diff-name">中級</div>
+            <div class="diff-desc">6ペア（12枚）</div>
+          </div>
+        </button>
+        <button class="diff-card" onclick="startMatching(8)">
+          <span class="diff-icon">🔴</span>
+          <div>
+            <div class="diff-name">上級</div>
+            <div class="diff-desc">8ペア（16枚）</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- ゲーム画面 -->
+    <div id="matchingGame" style="display:none;">
+      <div class="matching-header">
+        <div class="matching-timer" id="matchingTimerDisp">0:00</div>
+        <div class="matching-attempts" id="matchingAttemptsDisp">0回</div>
+      </div>
+      <div class="matching-grid" id="matchingGrid"></div>
+    </div>
+
+    <!-- 結果画面 -->
+    <div id="matchingResult" style="display:none;">
+      <div class="matching-result">
+        <div class="result-time" id="matchingResultTime">0:00</div>
+        <div class="result-attempts" id="matchingResultAttempts">0回</div>
+        <div class="result-best" id="matchingResultBest">ベスト: -</div>
+        <div class="result-btn-row" style="justify-content:center;margin-top:16px;">
+          <button class="btn btn-outline" onclick="retryMatching()">もう一度</button>
+          <button class="btn btn-primary" onclick="goBack()">戻る</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SUBPAGE: 一言日記 ====== -->
+  <div class="page sub-page" id="page-diary">
+    <div class="sub-page-header">
+      <button class="back-btn" onclick="goBack()">← 戻る</button>
+      <h2 class="sub-page-title">📝 一言日記</h2>
+    </div>
+
+    <div class="diary-prompt" id="diaryPrompt">今日の気持ちをタイ語（または日本語）で一文書いてください。Claude が添削します。</div>
+
+    <button class="btn btn-outline btn-sm btn-pill mb-8" onclick="changeDiaryPrompt()">🎲 別のお題</button>
+
+    <textarea class="diary-input" id="diaryInput" placeholder="タイ語または日本語で...（例：วันนี้ร้อนมาก / 今日は暑い）"></textarea>
+
+    <div style="display:flex;gap:8px;margin-top:10px;margin-bottom:14px;">
+      <button class="btn btn-primary" style="flex:1;" id="diarySubmitBtn" onclick="submitDiary()">✏️ 添削してもらう</button>
+    </div>
+
+    <div id="diaryStatusMsg" class="status-msg"></div>
+
+    <div class="diary-result" id="diaryResult">
+      <div class="diary-before" id="diaryBefore"></div>
+      <div class="diary-after" id="diaryAfter"></div>
+      <div class="diary-romaji" id="diaryRomaji"></div>
+      <div class="diary-jp" id="diaryJP"></div>
+      <div class="diary-point" id="diaryPoint"></div>
+      <div class="diary-rating" id="diaryRating"></div>
+      <button class="btn btn-outline btn-sm mt-8" onclick="playDiaryAudio()">🔊 正しい発音を聞く</button>
+    </div>
+
+    <div class="diary-history" id="diaryHistory">
+      <div class="diary-history-title">📅 日記履歴</div>
+      <div id="diaryEntryList"></div>
+    </div>
+  </div>
+
+  <!-- ====== SUBPAGE: シャドーイング ====== -->
+  <div class="page sub-page" id="page-shadowing">
+    <div class="sub-page-header">
+      <button class="back-btn" onclick="goBack()">← 戻る</button>
+      <h2 class="sub-page-title">🔊 シャドーイング</h2>
+    </div>
+
+    <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:12px;">お手本の音声を聞いて、真似して録音します。一致度をフィードバックします。</p>
+
+    <div class="shadow-phrase-card">
+      <div class="shadow-thai" id="shadowText">開始してください</div>
+      <div class="shadow-romaji" id="shadowRomaji"></div>
+      <div class="shadow-jp" id="shadowJP"></div>
+    </div>
+
+    <div class="shadow-controls">
+      <div class="shadow-step">
+        <div class="shadow-step-num" id="shadowStep1">1</div>
+        <div>お手本を聞く</div>
+      </div>
+      <div class="shadow-step">
+        <div class="shadow-step-num" id="shadowStep2">2</div>
+        <div>カウントダウン後に録音開始</div>
+      </div>
+      <div class="shadow-step">
+        <div class="shadow-step-num" id="shadowStep3">3</div>
+        <div>一致度を確認</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full" id="shadowStartBtn" onclick="startShadowingRound()">▶ 開始する</button>
+    <button class="btn btn-outline btn-full mt-8" id="shadowStopBtn" onclick="stopShadowRecording()" style="display:none;">⏹ 録音停止</button>
+
+    <div class="shadow-result mt-12" id="shadowResult" style="display:none;">
+      <div class="shadow-match-percent" id="shadowMatchPercent">0%</div>
+      <div style="font-size:0.75rem;color:var(--text-muted);">一致度</div>
+      <div class="shadow-user-text" id="shadowUserText"></div>
+      <button class="btn btn-primary btn-sm btn-pill mt-8" onclick="startShadowingRound()">もう一度</button>
+    </div>
+
+    <div style="margin-top:16px;">
+      <div class="diary-history-title">🏆 シャドーイング履歴</div>
+      <div id="shadowHistoryList"></div>
+    </div>
+  </div>
+
+  <!-- ====== SUBPAGE: 身の回りスキャン ====== -->
+  <div class="page sub-page" id="page-scanner">
+    <div class="sub-page-header">
+      <button class="back-btn" onclick="goBack()">← 戻る</button>
+      <h2 class="sub-page-title">📸 身の回りスキャン</h2>
+    </div>
+
+    <div class="scanner-mode-switch">
+      <button class="scanner-mode-btn active" onclick="setScanMode('work', this)">🏭 職場モード</button>
+      <button class="scanner-mode-btn" onclick="setScanMode('daily', this)">🏠 日常モード</button>
+    </div>
+
+    <div class="scanner-capture">
+      <label class="capture-btn">
+        📸 写真を撮る
+        <input type="file" accept="image/*" capture="environment" onchange="handleScanPhoto(this)" style="display:none;">
+      </label>
+      <label class="capture-btn secondary">
+        🖼 ライブラリから選ぶ
+        <input type="file" accept="image/*" onchange="handleScanPhoto(this)" style="display:none;">
       </label>
     </div>
 
-    <div class="setting-item" style="flex-direction:column; align-items:flex-start; gap:12px;">
-      <div class="setting-info">
-        <div class="setting-label">⏩ 音声速度</div>
-        <div class="setting-desc">読み上げ速度を選択してください</div>
-      </div>
-      <div class="speed-btns" id="speedBtns">
-        <button class="speed-btn" onclick="setSpeechRate(0.5, this)">🐢 0.5x（ゆっくり）</button>
-        <button class="speed-btn active" onclick="setSpeechRate(0.8, this)">▶ 0.8x（標準）</button>
-        <button class="speed-btn" onclick="setSpeechRate(1.0, this)">🐇 1.0x（速い）</button>
+    <div id="scanStatusMsg" class="status-msg"></div>
+
+    <div id="scanResult" style="display:none;">
+      <img id="scanPreview" class="scan-preview" alt="スキャン画像">
+      <div class="scan-result-card">
+        <div class="scan-thai" id="scanThai"></div>
+        <div class="scan-romaji" id="scanRomaji"></div>
+        <div style="font-size:0.75rem;color:var(--text-muted);" id="scanKatakana"></div>
+        <div class="scan-jp" id="scanJP"></div>
+        <div class="scan-example" id="scanExample"></div>
+        <div class="scan-actions">
+          <button class="btn btn-outline btn-sm" onclick="playScanAudio()">🔊 発音</button>
+          <button class="btn btn-primary btn-sm" onclick="saveScanWord()">💾 マイ単語に保存</button>
+        </div>
       </div>
     </div>
 
-    <!-- API Keys -->
-    <div class="setting-item" style="flex-direction:column; align-items:flex-start; gap:16px; margin-top:8px;">
-      <div class="setting-info">
-        <div class="setting-label">🤖 AI API キー設定</div>
-        <div class="setting-desc">キーはこの端末のみに保存されます（GitHubには送信されません）</div>
-      </div>
-
-      <div style="width:100%; display:flex; flex-direction:column; gap:10px;">
-        <label style="font-size:0.82rem; color:var(--muted);">Google Cloud TTS API Key（タイ語音声・推奨）</label>
-        <div style="display:flex; gap:8px;">
-          <input type="password" id="googleKeyInput" placeholder="AIza..." style="flex:1; background:var(--surface3); border:1px solid var(--border); border-radius:8px; padding:10px 12px; color:var(--text); font-size:0.85rem; font-family:monospace;">
-          <button onclick="saveApiKey('google')" style="background:#34a853; color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-size:0.82rem; white-space:nowrap;">保存</button>
-        </div>
-        <div id="googleKeyStatus" style="font-size:0.78rem; color:var(--muted); min-height:1em;"></div>
-      </div>
-
-      <div style="width:100%; display:flex; flex-direction:column; gap:10px;">
-        <label style="font-size:0.82rem; color:var(--muted);">OpenAI API Key（音声認識・TTS）</label>
-        <div style="display:flex; gap:8px;">
-          <input type="password" id="openaiKeyInput" placeholder="sk-..." style="flex:1; background:var(--surface3); border:1px solid var(--border); border-radius:8px; padding:10px 12px; color:var(--text); font-size:0.85rem; font-family:monospace;">
-          <button onclick="saveApiKey('openai')" style="background:var(--accent); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-size:0.82rem; white-space:nowrap;">保存</button>
-        </div>
-        <div id="openaiKeyStatus" style="font-size:0.78rem; color:var(--muted); min-height:1em;"></div>
-      </div>
-
-      <div style="width:100%; display:flex; flex-direction:column; gap:10px;">
-        <label style="font-size:0.82rem; color:var(--muted);">Claude API Key（AI分析・例文生成）</label>
-        <div style="display:flex; gap:8px;">
-          <input type="password" id="claudeKeyInput" placeholder="sk-ant-..." style="flex:1; background:var(--surface3); border:1px solid var(--border); border-radius:8px; padding:10px 12px; color:var(--text); font-size:0.85rem; font-family:monospace;">
-          <button onclick="saveApiKey('claude')" style="background:var(--accent2); color:#fff; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-size:0.82rem; white-space:nowrap;">保存</button>
-        </div>
-        <div id="claudeKeyStatus" style="font-size:0.78rem; color:var(--muted); min-height:1em;"></div>
-      </div>
-
-      <div style="width:100%; display:flex; gap:8px; flex-wrap:wrap;">
-        <button onclick="showApiKeys()" style="background:var(--surface3); color:var(--text-dim); border:1px solid var(--border); border-radius:8px; padding:8px 14px; cursor:pointer; font-size:0.8rem;">👁 表示/非表示</button>
-        <button onclick="clearApiKeys()" style="background:var(--surface3); color:var(--red); border:1px solid var(--border); border-radius:8px; padding:8px 14px; cursor:pointer; font-size:0.8rem;">🗑 全削除</button>
-      </div>
+    <div>
+      <div class="scan-history-title">📷 スキャン履歴</div>
+      <div class="scan-gallery" id="scanGallery"></div>
     </div>
-
   </div>
+
+</div><!-- /.app-container -->
+
+<!-- ===== ボトムナビ ===== -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="nav-item active" data-page="home" onclick="switchPage('home')">
+    <span class="nav-icon">🏠</span>
+    <span>ホーム</span>
+  </button>
+  <button class="nav-item" data-page="library" onclick="switchPage('library')">
+    <span class="nav-icon">📚</span>
+    <span>ライブラリ</span>
+  </button>
+  <button class="nav-item" data-page="practice" onclick="switchPage('practice')">
+    <span class="nav-icon">🎯</span>
+    <span>練習</span>
+  </button>
+  <button class="nav-item" data-page="progress" onclick="switchPage('progress')">
+    <span class="nav-icon">📊</span>
+    <span>進捗</span>
+  </button>
+  <button class="nav-item" data-page="settings" onclick="switchPage('settings')">
+    <span class="nav-icon">⚙️</span>
+    <span>設定</span>
+  </button>
+</nav>
+
+<!-- Confetti用Canvas -->
+<canvas id="confettiCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;"></canvas>
+
+<!-- カウントダウンオーバーレイ（シャドーイング用） -->
+<div class="countdown-overlay" id="countdownOverlay">
+  <div class="countdown-number" id="countdownNumber">3</div>
 </div>
 
-<!-- DRILL: 指示出しドリル＋会議シミュレーション -->
-<div class="section" id="drill">
-  <p class="section-title">🎤 スピーキングドリル</p>
-
-  <!-- モード選択 -->
-  <div class="mode-btns" style="margin-bottom:16px;">
-    <button class="mode-btn active" id="drillModeBtn" onclick="switchDrillMode('drill', this)">📢 指示出しドリル</button>
-    <button class="mode-btn" id="simModeBtn" onclick="switchDrillMode('sim', this)">🤝 会議シミュレーション</button>
-  </div>
-
-  <!-- ===== 指示出しドリル ===== -->
-  <div id="drillPanel">
-    <!-- シーン選択 -->
-    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
-      <button class="filter-btn scene-btn active" onclick="setDrillScene('all', this)">全て</button>
-      <button class="filter-btn scene-btn" onclick="setDrillScene('morning', this)">☀️ 朝礼</button>
-      <button class="filter-btn scene-btn" onclick="setDrillScene('defect', this)">⚠️ 不良対応</button>
-      <button class="filter-btn scene-btn" onclick="setDrillScene('instruction', this)">📢 作業指示</button>
-      <button class="filter-btn scene-btn" onclick="setDrillScene('safety', this)">⛑ 安全</button>
-    </div>
-
-    <!-- お題カード -->
-    <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px 20px 16px; text-align:center; margin-bottom:16px;">
-      <div style="font-size:0.75rem; color:var(--muted); margin-bottom:8px;">📋 この日本語をタイ語で言ってください</div>
-      <div id="drillPromptJP" style="font-size:1.2rem; color:var(--text); font-weight:600; line-height:1.5; min-height:2em;">ロード中...</div>
-      <div id="drillSceneTag" style="font-size:0.75rem; color:var(--accent); margin-top:8px;"></div>
-    </div>
-
-    <!-- 録音ボタン -->
-    <div style="display:flex; flex-direction:column; align-items:center; gap:12px; margin-bottom:16px;">
-      <button id="drillRecordBtn" onclick="toggleDrillRecord()" style="width:80px; height:80px; border-radius:50%; border:3px solid var(--red); background:var(--surface2); font-size:2rem; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center;">🎙</button>
-      <div id="drillRecordStatus" style="font-size:0.82rem; color:var(--muted);">ボタンを押してタイ語で話す</div>
-    </div>
-
-    <!-- 結果エリア -->
-    <div id="drillResultArea" style="display:none; flex-direction:column; gap:12px;">
-      <!-- Whisper結果 -->
-      <div style="background:var(--surface2); border-radius:12px; padding:14px;">
-        <div style="font-size:0.72rem; color:var(--muted); margin-bottom:6px;">🎧 あなたが言ったこと（Whisper認識）</div>
-        <div id="drillUserText" style="font-size:1rem; color:var(--thai); font-family:'Sarabun', sans-serif;">–</div>
-      </div>
-      <!-- Claudeフィードバック -->
-      <div style="background:var(--surface2); border:1px solid var(--accent2); border-radius:12px; padding:14px;">
-        <div style="font-size:0.72rem; color:var(--accent2); margin-bottom:6px;">🤖 Claudeのフィードバック</div>
-        <div id="drillFeedback" style="font-size:0.84rem; color:var(--text-dim); line-height:1.7; white-space:pre-wrap;">–</div>
-      </div>
-      <!-- お手本 -->
-      <div style="background:var(--surface2); border:1px solid var(--green); border-radius:12px; padding:14px;">
-        <div style="font-size:0.72rem; color:var(--green); margin-bottom:6px;">✅ お手本</div>
-        <div id="drillModelThai" style="font-size:1.1rem; color:var(--thai); font-family:'Sarabun', sans-serif; margin-bottom:4px;">–</div>
-        <div id="drillModelRomaji" style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;">–</div>
-        <div id="drillModelJP" style="font-size:0.85rem; color:var(--text-dim);">–</div>
-        <button onclick="playDrillModel()" style="margin-top:10px; background:var(--surface3); border:1px solid var(--border); border-radius:8px; padding:8px 16px; color:var(--text); cursor:pointer; font-size:0.82rem;">🔊 お手本を聞く</button>
-      </div>
-    </div>
-
-    <!-- ナビゲーション -->
-    <div style="display:flex; gap:10px; margin-top:16px; justify-content:center;">
-      <button onclick="prevDrill()" style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px 20px; color:var(--text); cursor:pointer;">← 前</button>
-      <button onclick="nextDrill()" style="background:var(--accent); border:none; border-radius:10px; padding:10px 20px; color:#fff; cursor:pointer; font-weight:600;">次へ →</button>
-    </div>
-    <div id="drillCounter" style="text-align:center; font-size:0.8rem; color:var(--muted); margin-top:8px;">1 / 20</div>
-  </div>
-
-  <!-- ===== 会議シミュレーション ===== -->
-  <div id="simPanel" style="display:none;">
-    <!-- シーン選択 -->
-    <div style="margin-bottom:16px;">
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="filter-btn" onclick="startSim('morning')">☀️ 朝礼</button>
-        <button class="filter-btn" onclick="startSim('defect')">⚠️ 不良対応</button>
-        <button class="filter-btn" onclick="startSim('delivery')">📦 納期確認</button>
-        <button class="filter-btn" onclick="startSim('safety')">⛑ 安全指示</button>
-      </div>
-    </div>
-
-    <!-- 会話エリア -->
-    <div id="simConversation" style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:16px; min-height:180px; max-height:360px; overflow-y:auto; margin-bottom:12px; display:flex; flex-direction:column; gap:12px;">
-      <div style="text-align:center; color:var(--muted); font-size:0.85rem; padding:20px 0;">上のシーンを選ぶと会話が始まります</div>
-    </div>
-
-    <!-- 録音ボタン -->
-    <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
-      <button id="simRecordBtn" onclick="toggleSimRecord()" style="width:72px; height:72px; border-radius:50%; border:3px solid var(--red); background:var(--surface2); font-size:1.8rem; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center;" disabled>🎙</button>
-      <div id="simRecordStatus" style="font-size:0.82rem; color:var(--muted);">シーンを選んでください</div>
-      <button onclick="resetSim()" style="background:transparent; border:1px solid var(--border); border-radius:8px; padding:7px 14px; color:var(--muted); cursor:pointer; font-size:0.78rem;">🔄 リセット</button>
-    </div>
-  </div>
-</div>
-
-<script src="data.js?v=20260321"></script>
-<script src="app.js?v=20260321"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
 <script type="module">
-import { loginWithGoogle, logoutFirebase, onAuthChange, uploadToFirestore, downloadFromFirestore }
-  from './firebase-sync.js';
+  import { loginWithGoogle, logoutFirebase, onAuthChange, uploadToFirestore, downloadFromFirestore }
+    from './firebase-sync.js';
 
-window.firebaseLogin = async function() {
-  try {
-    await loginWithGoogle();
-  } catch(e) {
-    alert('ログインに失敗しました: ' + e.message);
-  }
-};
-
-window.firebaseLogout = async function() {
-  await logoutFirebase();
-};
-
-window.firebaseUpload = async function() {
-  const msg = document.getElementById('syncMessage');
-  msg.textContent = '保存中...';
-  try {
-    await uploadToFirestore();
-    msg.textContent = '✅ クラウドに保存しました（' + new Date().toLocaleTimeString() + '）';
-  } catch(e) {
-    msg.textContent = '❌ 保存失敗: ' + e.message;
-  }
-};
-
-window.firebaseDownload = async function() {
-  const msg = document.getElementById('syncMessage');
-  msg.textContent = '読み込み中...';
-  try {
-    const ok = await downloadFromFirestore();
-    if (ok) {
-      msg.textContent = '✅ データを読み込みました。ページを再読み込みします...';
-      setTimeout(() => location.reload(), 1500);
-    } else {
-      msg.textContent = 'クラウドにデータがありません';
+  window.firebaseLogin = async () => {
+    try {
+      await loginWithGoogle();
+    } catch(e) {
+      document.getElementById('syncStatus').textContent = '⚠️ ログインエラー: ' + e.message;
     }
-  } catch(e) {
-    msg.textContent = '❌ 読み込み失敗: ' + e.message;
-  }
-};
+  };
 
-onAuthChange(function(user) {
-  const loggedOut = document.getElementById('syncLoggedOut');
-  const loggedIn = document.getElementById('syncLoggedIn');
-  if (!loggedOut || !loggedIn) return;
-  if (user) {
-    loggedOut.style.display = 'none';
-    loggedIn.style.display = 'flex';
-    document.getElementById('syncUserName').textContent = user.displayName || '';
-    document.getElementById('syncUserEmail').textContent = user.email || '';
-    const avatar = document.getElementById('syncUserAvatar');
-    if (user.photoURL) { avatar.src = user.photoURL; avatar.style.display = ''; }
-    // ログイン時に自動でアップロード
-    uploadToFirestore().catch(() => {});
-  } else {
-    loggedOut.style.display = 'flex';
-    loggedIn.style.display = 'none';
-  }
-});
+  window.firebaseLogout = async () => {
+    try {
+      await logoutFirebase();
+      document.getElementById('firebaseUserName').textContent = '未ログイン';
+      document.getElementById('firebaseLoginBtn').textContent = 'ログイン';
+      document.getElementById('syncStatus').textContent = 'ログアウトしました';
+    } catch(e) {
+      document.getElementById('syncStatus').textContent = '⚠️ エラー: ' + e.message;
+    }
+  };
+
+  window.firebaseUpload = async () => {
+    try {
+      document.getElementById('syncStatus').textContent = 'アップロード中...';
+      await uploadToFirestore();
+      document.getElementById('syncStatus').textContent = '✅ アップロード完了 ' + new Date().toLocaleTimeString();
+    } catch(e) {
+      document.getElementById('syncStatus').textContent = '⚠️ エラー: ' + e.message;
+    }
+  };
+
+  window.firebaseDownload = async () => {
+    try {
+      document.getElementById('syncStatus').textContent = 'ダウンロード中...';
+      await downloadFromFirestore();
+      document.getElementById('syncStatus').textContent = '✅ ダウンロード完了 ' + new Date().toLocaleTimeString();
+      location.reload();
+    } catch(e) {
+      document.getElementById('syncStatus').textContent = '⚠️ エラー: ' + e.message;
+    }
+  };
+
+  onAuthChange(user => {
+    if (user) {
+      document.getElementById('firebaseUserName').textContent = user.displayName || user.email;
+      document.getElementById('firebaseLoginBtn').textContent = '✅ ログイン中';
+    } else {
+      document.getElementById('firebaseUserName').textContent = '未ログイン';
+      document.getElementById('firebaseLoginBtn').textContent = 'ログイン';
+    }
+  });
 </script>
 </body>
 </html>
