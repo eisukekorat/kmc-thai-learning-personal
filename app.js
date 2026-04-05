@@ -1094,7 +1094,7 @@ async function submitGrammarDrill() {
     try {
       const data = await claudeFetch(key, {
         model: 'claude-haiku-4-5-20251001', max_tokens: 200,
-        messages: [{ role: 'user', content: `タイ語文法ドリル添削。\nパターン：「${g.title}」\nお題：「${q.question}」\nお手本：「${q.model}」\n回答：「${userAnswer}」\n日本語3行以内：正しいか、お手本との違い、アドバイス` }]
+        messages: [{ role: 'user', content: `タイ語文法ドリル添削。\nパターン：「${g.title}」\nお題：「${q.question}」\nお手本：「${q.model}」\n回答：「${userAnswer}」\n日本語3行以内：正しいか、お手本との違い、アドバイス。Markdown記法（#や**等）は使わずプレーンテキストで回答` }]
       });
       document.getElementById('grammarDrillFeedback').textContent = data.content[0].text;
     } catch (e) { document.getElementById('grammarDrillFeedback').textContent = '（添削取得失敗）'; }
@@ -1244,7 +1244,7 @@ async function getDrillFeedback(userText) {
   try {
     const data = await claudeFetch(key, {
       model: 'claude-haiku-4-5-20251001', max_tokens: 250,
-      messages: [{ role: 'user', content: `タイ語スピーキング練習のフィードバック。\nお題：「${scenario.jp}」\nお手本：「${scenario.thai}」\n学習者：「${userText}」\n日本語3行以内：意味が通じるか、お手本との違い、アドバイス` }]
+      messages: [{ role: 'user', content: `タイ語スピーキング練習のフィードバック。\nお題：「${scenario.jp}」\nお手本：「${scenario.thai}」\n学習者：「${userText}」\n日本語3行以内：意味が通じるか、お手本との違い、アドバイス。Markdown記法は使わずプレーンテキストで回答` }]
     });
     document.getElementById('drillFeedback').textContent = data.content[0].text;
     logLearningEvent({ type: 'drill', scene: scenario.scene, jp: scenario.jp });
@@ -1416,7 +1416,7 @@ async function analyzeWeakness() {
   try {
     const data = await claudeFetch(key, {
       model: 'claude-haiku-4-5-20251001', max_tokens: 400,
-      messages: [{ role: 'user', content: `タイ語学習者の1週間ログを分析。\n${summary}\n日本語で5〜8行：1.弱点 2.重点練習 3.励まし` }]
+      messages: [{ role: 'user', content: `タイ語学習者の1週間ログを分析。\n${summary}\n日本語で5〜8行：1.弱点 2.重点練習 3.励まし。Markdown記法は使わずプレーンテキストで回答` }]
     });
     textEl.textContent = data.content[0].text;
     resultEl.style.display = 'flex';
